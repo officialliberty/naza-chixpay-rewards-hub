@@ -49,33 +49,6 @@ function CountBadge({ count }: { count: number }) {
   return <span className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-gold px-1.5 py-0.5 text-[10px] font-bold leading-none text-background">{count}</span>;
 }
 
-function PendingBadge() {
-  return <span className="rounded-full border border-gold/40 bg-gold px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-background">Pending review</span>;
-}
-
-function ReviewSection<T extends { status: string }>({ title, rows, empty, render, loading }: {
-  title: string; rows: T[]; empty: string; loading: boolean;
-  render: (row: T) => React.ReactNode;
-}) {
-  const pendingRows = rows.filter((row) => row.status === "pending");
-  const reviewedRows = rows.filter((row) => row.status !== "pending");
-  return <div className="space-y-3">
-    {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-    {!loading && rows.length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
-    {!loading && pendingRows.length > 0 && <>
-      <div className="flex items-center gap-2">
-        <h3 className="font-display text-sm font-semibold text-gold">Pending review</h3>
-        <CountBadge count={pendingRows.length}/>
-      </div>
-      {pendingRows.map(render)}
-    </>}
-    {!loading && reviewedRows.length > 0 && <>
-      <h3 className="pt-2 font-display text-sm font-semibold text-muted-foreground">{title}</h3>
-      {reviewedRows.map(render)}
-    </>}
-  </div>;
-}
-
 function StatusPill({ status }: { status: string }) {
   const tone = status === "active" || status === "approved" ? "border-leaf/30 bg-leaf/12 text-leaf"
     : status === "pending" ? "border-gold/30 bg-gold/12 text-gold"
@@ -277,22 +250,26 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   };
 
   const policyPanel = (kind: "fee" | "upgrade" | "final", empty: string) => <Panel className="mt-3">
-    <ReviewSection title="Reviewed payments" rows={withdrawPayments.filter((row) => row.kind === kind)} empty={empty} loading={loading} render={(row) => <div key={row.id} className={`rounded-2xl border p-4 ${row.status === "pending" ? "border-gold/40 bg-gold/5" : "border-glass-border bg-glass"}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-display text-sm font-semibold">{row.plan_name ?? row.kind} · {money(row.amount)}</p>
-          <p className="text-xs text-muted-foreground">{row.full_name ?? "Unnamed member"} · {row.email ?? "No email"}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Withdrawal {money(row.withdraw_amount)} · {row.bank_name} · {row.account_number}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(row.created_at)} · Withdrawal step: {row.stage}</p>
+    <div className="space-y-3">
+      {loading && <p className="text-sm text-muted-foreground">Loading payments…</p>}
+      {!loading && withdrawPayments.filter((row) => row.kind === kind).length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
+      {withdrawPayments.filter((row) => row.kind === kind).map((row) => <div key={row.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-display text-sm font-semibold">{row.plan_name ?? row.kind} · {money(row.amount)}</p>
+            <p className="text-xs text-muted-foreground">{row.full_name ?? "Unnamed member"} · {row.email ?? "No email"}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Withdrawal {money(row.withdraw_amount)} · {row.bank_name} · {row.account_number}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(row.created_at)} · Withdrawal step: {row.stage}</p>
+          </div>
+          <StatusPill status={row.status}/>
         </div>
-        {row.status === "pending" ? <PendingBadge/> : <StatusPill status={row.status}/>}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button variant="glass" size="sm" onClick={() => void openPath(row.receipt_path)}><Eye/> View receipt</Button>
-        <Button variant="reward" size="sm" onClick={() => void setWithdrawPaymentStatus(row, "approved")}><CheckCircle2/> Approve</Button>
-        <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setWithdrawPaymentStatus(row, "rejected")}><Ban/> Reject</Button>
-      </div>
-    </div>}/>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button variant="glass" size="sm" onClick={() => void openPath(row.receipt_path)}><Eye/> View receipt</Button>
+          <Button variant="reward" size="sm" onClick={() => void setWithdrawPaymentStatus(row, "approved")}><CheckCircle2/> Approve</Button>
+          <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setWithdrawPaymentStatus(row, "rejected")}><Ban/> Reject</Button>
+        </div>
+      </div>)}
+    </div>
   </Panel>;
 
   const filtered = useMemo(() => {
@@ -448,22 +425,26 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
           </div>
         </Panel>
         <Panel className="mt-3">
-          <ReviewSection title="Reviewed Chix ID payments" rows={chixRequests} empty="No Chix ID payments yet." loading={loading} render={(request) => <div key={request.id} className={`rounded-2xl border p-4 ${request.status === "pending" ? "border-gold/40 bg-gold/5" : "border-glass-border bg-glass"}`}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
-                <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{request.uses_total === null ? "Unlimited uses" : `${request.uses_total} use${request.uses_total === 1 ? "" : "s"}`} · Submitted {when(request.created_at)}</p>
-                {request.chix_id && <p className="mt-1 text-[11px] text-leaf">Released ID: {request.chix_id}</p>}
+          <div className="space-y-3">
+            {loading && <p className="text-sm text-muted-foreground">Loading Chix ID payments…</p>}
+            {!loading && chixRequests.length === 0 && <p className="text-sm text-muted-foreground">No Chix ID payments yet.</p>}
+            {chixRequests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
+                  <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{request.uses_total === null ? "Unlimited uses" : `${request.uses_total} use${request.uses_total === 1 ? "" : "s"}`} · Submitted {when(request.created_at)}</p>
+                  {request.chix_id && <p className="mt-1 text-[11px] text-leaf">Released ID: {request.chix_id}</p>}
+                </div>
+                <StatusPill status={request.status}/>
               </div>
-              {request.status === "pending" ? <PendingBadge/> : <StatusPill status={request.status}/>}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
-              <Button variant="reward" size="sm" onClick={() => void setChixRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
-              <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setChixRequestStatus(request, "rejected")}><Ban/> Reject</Button>
-            </div>
-          </div>}/>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
+                <Button variant="reward" size="sm" onClick={() => void setChixRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
+                <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setChixRequestStatus(request, "rejected")}><Ban/> Reject</Button>
+              </div>
+            </div>)}
+          </div>
         </Panel>
       </>}
 
@@ -504,21 +485,25 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       </Panel>}
 
       {tab === "upgrades" && <Panel className="mt-3">
-        <ReviewSection title="Reviewed upgrade payments" rows={requests} empty="No upgrade requests yet." loading={loading} render={(request) => <div key={request.id} className={`rounded-2xl border p-4 ${request.status === "pending" ? "border-gold/40 bg-gold/5" : "border-glass-border bg-glass"}`}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
-              <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(request.created_at)}</p>
+        <div className="space-y-3">
+          {loading && <p className="text-sm text-muted-foreground">Loading requests…</p>}
+          {!loading && requests.length === 0 && <p className="text-sm text-muted-foreground">No upgrade requests yet.</p>}
+          {requests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
+                <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(request.created_at)}</p>
+              </div>
+              <StatusPill status={request.status}/>
             </div>
-            {request.status === "pending" ? <PendingBadge/> : <StatusPill status={request.status}/>}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
-            <Button variant="reward" size="sm" onClick={() => void setRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
-            <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setRequestStatus(request, "rejected")}><Ban/> Reject</Button>
-          </div>
-        </div>}/>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
+              <Button variant="reward" size="sm" onClick={() => void setRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
+              <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setRequestStatus(request, "rejected")}><Ban/> Reject</Button>
+            </div>
+          </div>)}
+        </div>
       </Panel>}
 
       <p className="py-8 text-center text-[11px] text-muted-foreground">ChixPay control room · access is limited to approved staff accounts.</p>
