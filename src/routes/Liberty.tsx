@@ -448,26 +448,22 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
           </div>
         </Panel>
         <Panel className="mt-3">
-          <div className="space-y-3">
-            {loading && <p className="text-sm text-muted-foreground">Loading Chix ID payments…</p>}
-            {!loading && chixRequests.length === 0 && <p className="text-sm text-muted-foreground">No Chix ID payments yet.</p>}
-            {chixRequests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
-                  <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{request.uses_total === null ? "Unlimited uses" : `${request.uses_total} use${request.uses_total === 1 ? "" : "s"}`} · Submitted {when(request.created_at)}</p>
-                  {request.chix_id && <p className="mt-1 text-[11px] text-leaf">Released ID: {request.chix_id}</p>}
-                </div>
-                <StatusPill status={request.status}/>
+          <ReviewSection title="Reviewed Chix ID payments" rows={chixRequests} empty="No Chix ID payments yet." loading={loading} render={(request) => <div key={request.id} className={`rounded-2xl border p-4 ${request.status === "pending" ? "border-gold/40 bg-gold/5" : "border-glass-border bg-glass"}`}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
+                <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{request.uses_total === null ? "Unlimited uses" : `${request.uses_total} use${request.uses_total === 1 ? "" : "s"}`} · Submitted {when(request.created_at)}</p>
+                {request.chix_id && <p className="mt-1 text-[11px] text-leaf">Released ID: {request.chix_id}</p>}
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
-                <Button variant="reward" size="sm" onClick={() => void setChixRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
-                <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setChixRequestStatus(request, "rejected")}><Ban/> Reject</Button>
-              </div>
-            </div>)}
-          </div>
+              {request.status === "pending" ? <PendingBadge/> : <StatusPill status={request.status}/>}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
+              <Button variant="reward" size="sm" onClick={() => void setChixRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
+              <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setChixRequestStatus(request, "rejected")}><Ban/> Reject</Button>
+            </div>
+          </div>}/>
         </Panel>
       </>}
 
