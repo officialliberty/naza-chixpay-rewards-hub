@@ -164,12 +164,14 @@
 }
 
 @keyframes note-float {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(-13deg); }
-  50% { transform: translate3d(8px, -18px, 0) rotate(-7deg); }
+  0%, 100% { transform: translate3d(0, 8px, 0) rotate(-13deg) scale(.96); }
+  35% { transform: translate3d(12px, -22px, 0) rotate(-5deg) scale(1.03); }
+  70% { transform: translate3d(-6px, -10px, 0) rotate(-17deg) scale(1); }
 }
 @keyframes note-float-two {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(16deg); }
-  50% { transform: translate3d(-7px, 14px, 0) rotate(22deg); }
+  0%, 100% { transform: translate3d(0, -6px, 0) rotate(16deg) scale(1); }
+  40% { transform: translate3d(-14px, 20px, 0) rotate(24deg) scale(.95); }
+  75% { transform: translate3d(7px, 9px, 0) rotate(11deg) scale(1.04); }
 }
 @keyframes glow-breathe {
   0%, 100% { opacity: .24; transform: scale(1); }
@@ -188,8 +190,8 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@utility note-float { animation: note-float 9s ease-in-out infinite; }
-@utility note-float-two { animation: note-float-two 12s ease-in-out infinite; }
+@utility note-float { animation: note-float 6.5s ease-in-out infinite; will-change: transform; }
+@utility note-float-two { animation: note-float-two 8s ease-in-out infinite; will-change: transform; }
 @utility glow-breathe { animation: glow-breathe 3.5s ease-in-out infinite; }
 @utility glass-sheen { animation: sheen 5s ease-in-out infinite; }
 @utility landing-enter { animation: landing-enter .65s cubic-bezier(.22,1,.36,1) both; }
