@@ -504,25 +504,21 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       </Panel>}
 
       {tab === "upgrades" && <Panel className="mt-3">
-        <div className="space-y-3">
-          {loading && <p className="text-sm text-muted-foreground">Loading requests…</p>}
-          {!loading && requests.length === 0 && <p className="text-sm text-muted-foreground">No upgrade requests yet.</p>}
-          {requests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
-                <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(request.created_at)}</p>
-              </div>
-              <StatusPill status={request.status}/>
+        <ReviewSection title="Reviewed upgrade payments" rows={requests} empty="No upgrade requests yet." loading={loading} render={(request) => <div key={request.id} className={`rounded-2xl border p-4 ${request.status === "pending" ? "border-gold/40 bg-gold/5" : "border-glass-border bg-glass"}`}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
+              <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(request.created_at)}</p>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
-              <Button variant="reward" size="sm" onClick={() => void setRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
-              <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setRequestStatus(request, "rejected")}><Ban/> Reject</Button>
-            </div>
-          </div>)}
-        </div>
+            {request.status === "pending" ? <PendingBadge/> : <StatusPill status={request.status}/>}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
+            <Button variant="reward" size="sm" onClick={() => void setRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
+            <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setRequestStatus(request, "rejected")}><Ban/> Reject</Button>
+          </div>
+        </div>}/>
       </Panel>}
 
       <p className="py-8 text-center text-[11px] text-muted-foreground">ChixPay control room · access is limited to approved staff accounts.</p>
