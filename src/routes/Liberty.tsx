@@ -197,6 +197,27 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     void load();
   };
 
+  const adjustBalance = async (user: AdminUser) => {
+    const entry = window.prompt(`Adjust balance for ${user.full_name ?? user.email}. Enter an amount in naira (use a minus sign to remove money).`, "5000");
+    if (entry === null) return;
+    const amount = Number(entry.replace(/[^0-9.-]/g, ""));
+    if (!amount) return setMessage("Enter a valid amount, for example 5000 or -5000.");
+    const reason = window.prompt("Reason shown to the member (optional)", "Manual adjustment") ?? "";
+    const { error } = await supabase.rpc("admin_adjust_balance", { _user_id: user.id, _amount: amount, _reason: reason });
+    if (error) return setMessage("That balance could not be updated.");
+    setMessage(`${money(Math.abs(amount))} ${amount > 0 ? "added to" : "removed from"} ${user.full_name ?? user.email}. The member was notified.`);
+    void load();
+  };
+
+  const sendMessage = async (user: AdminUser) => {
+    const title = window.prompt("Message title", "Message from ChixPay");
+    if (!title) return;
+    const body = window.prompt("Message to the member", "");
+    if (!body) return;
+    const { error } = await supabase.rpc("admin_send_notification", { _user_id: user.id, _title: title, _body: body });
+    setMessage(error ? "That message could not be sent." : `Message sent to ${user.full_name ?? user.email}.`);
+  };
+
   const setRequestStatus = async (request: AdminRequest, status: string) => {
     const { error } = await supabase.rpc("admin_set_upgrade_status", { _request_id: request.id, _status: status });
     if (error) return setMessage("That request could not be updated.");
