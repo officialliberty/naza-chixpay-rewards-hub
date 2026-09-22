@@ -221,7 +221,7 @@ function Tutorial({ onDone }: { onDone: () => void }) {
 
 const actions = [
   { label: "Withdraw", sub: "To your bank", icon: ArrowDownToLine }, { label: "Tasks", sub: "Earn daily", icon: BadgeCheck },
-  { label: "Broadcast", sub: "Share & earn", icon: Megaphone }, { label: "Upgrade", sub: "Raise limits", icon: Trophy },
+  { label: "Upgrade", sub: "Raise limits", icon: Trophy },
   { label: "Referral", sub: "Invite friends", icon: Users }, { label: "Videos", sub: "Watch to earn", icon: CirclePlay },
 ];
 
@@ -229,9 +229,6 @@ const actionCopy: Record<string, { title: string; description: string; button: s
   "Buy Chix ID": { title: "Activate your Chix ID", description: "Your Chix ID verifies your wallet before your first withdrawal.", button: "Activate Chix ID" },
   Withdraw: { title: "Withdraw funds", description: "Choose an amount and continue to your verified bank details.", button: "Continue withdrawal" },
   Tasks: { title: "Daily tasks", description: "Complete today’s verified activities to grow your reward balance.", button: "Start today’s task" },
-  Broadcast: { title: "Broadcast & earn", description: "Share your unique ChixPay message and return here to confirm it.", button: "Copy broadcast message" },
-  Upgrade: { title: "Upgrade account", description: "Complete account verification to unlock higher reward and withdrawal limits.", button: "Start verification" },
-  Referral: { title: "Invite friends", description: "Share your personal invitation and track successful referrals.", button: "Copy referral link" },
   Videos: { title: "Watch & earn", description: "Watch the featured reward video and complete the short check afterward.", button: "Play reward video" },
   History: { title: "Reward history", description: "Your latest wallet activity appears here.", button: "Done" },
   Profile: { title: "Your profile", description: "Review your personal details, state, and verification status.", button: "Done" },
