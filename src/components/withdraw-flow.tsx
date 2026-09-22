@@ -284,7 +284,7 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
           "New policy · withdrawal fee")}
 
         {!pending && stage === "upgrade" && <div className="auth-enter mt-5 space-y-3">
-          <p className="text-xs leading-5 text-muted-foreground">Your withdrawal fee was approved. Choose an upgrade plan to unlock your payout, then pay and upload your receipt.</p>
+          <p className="text-xs leading-5 text-muted-foreground">{rejected ? "Choose your upgrade plan again, pay and upload a valid receipt to continue." : "Your withdrawal fee was approved. Choose an upgrade plan to unlock your payout, then pay and upload your receipt."}</p>
           {upgradePlans.map((item) => (
             <button key={item.name} onClick={() => { setPlan(item); setNotice(""); }} className={`w-full rounded-[24px] border p-4 text-left backdrop-blur-xl transition ${plan?.name === item.name ? "border-leaf/60 bg-leaf/10" : "border-glass-border bg-glass hover:border-leaf/40"}`}>
               <div className="flex items-start justify-between">
