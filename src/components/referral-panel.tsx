@@ -25,11 +25,11 @@ export function ReferralPanel({ onBack }: { onBack: () => void }) {
       let referralCode = profile?.referral_code ?? "";
       if (!referralCode) {
         const meta = (user.user_metadata ?? {}) as { fullName?: string; phone?: string; state?: string };
-        const { data: ensured } = await supabase.rpc("ensure_profile", {
-          _full_name: meta.fullName ?? undefined,
-          _phone: meta.phone ?? undefined,
-          _state: meta.state ?? undefined,
-        });
+        const args: { _full_name?: string; _phone?: string; _state?: string } = {};
+        if (meta.fullName) args._full_name = meta.fullName;
+        if (meta.phone) args._phone = meta.phone;
+        if (meta.state) args._state = meta.state;
+        const { data: ensured } = await supabase.rpc("ensure_profile", args);
         referralCode = (ensured as string | null) ?? "";
       }
       setCode(referralCode);
