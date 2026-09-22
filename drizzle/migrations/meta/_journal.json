@@ -92,6 +92,13 @@
       "when": 1790092190889,
       "tag": "0012_withdraw_direct_toggle",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790095930895,
+      "tag": "0013_payout_account_settings",
+      "breakpoints": true
     }
   ]
 }
