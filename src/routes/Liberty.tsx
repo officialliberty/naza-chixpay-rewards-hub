@@ -280,11 +280,14 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       : <Button variant="glass" size="sm" onClick={() => void setStatus(user, "active")}><CheckCircle2/> Restore access</Button>;
   };
 
+  const isBanned = (userId: string) => (users.find((item) => item.id === userId)?.status ?? "active") !== "active";
+  const stillOpen = (status: string, userId: string) => status === "pending" && !isBanned(userId);
+
   const policyPanel = (kind: "fee" | "upgrade" | "final", empty: string) => <Panel className="mt-3">
     <div className="space-y-3">
       {loading && <p className="text-sm text-muted-foreground">Loading payments…</p>}
-      {!loading && withdrawPayments.filter((row) => row.kind === kind).length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
-      {withdrawPayments.filter((row) => row.kind === kind).map((row) => <div key={row.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+      {!loading && withdrawPayments.filter((row) => row.kind === kind && stillOpen(row.status, row.user_id)).length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
+      {withdrawPayments.filter((row) => row.kind === kind && stillOpen(row.status, row.user_id)).map((row) => <div key={row.id} className="rounded-2xl border border-glass-border bg-glass p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="font-display text-sm font-semibold">{row.plan_name ?? row.kind} · {money(row.amount)}</p>
