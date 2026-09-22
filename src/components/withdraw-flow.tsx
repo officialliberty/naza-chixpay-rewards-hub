@@ -141,12 +141,11 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
 
   const checkStatus = async () => {
     setBusy(true);
+    const held = active?.amount ?? 0;
     const found = await refresh();
     setBusy(false);
-    if (found?.stage === "fee" || !found) {
-      if (!found) { onSuccess(active?.amount ?? 0); setNotice(""); }
-    }
-    setNotice(found ? "" : "");
+    setNotice("");
+    if (!found) onSuccess(held);
   };
 
   const copyAccount = () => {
