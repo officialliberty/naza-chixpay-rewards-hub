@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Screen = "landing" | "auth" | "state" | "tutorial" | "dashboard";
-type FormData = { fullName: string; email: string; phone: string; password: string; state: string };
+type FormData = { fullName: string; email: string; phone: string; password: string; state: string; referralCode: string };
 
 const states = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT Abuja","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
 
@@ -64,7 +64,7 @@ function Brand() {
 function ChixPay() {
   const [screen, setScreen] = useState<Screen>("landing");
   const [mode, setMode] = useState<"signup" | "login">("signup");
-  const [form, setForm] = useState<FormData>({ fullName: "", email: "", phone: "", password: "", state: "" });
+  const [form, setForm] = useState<FormData>({ fullName: "", email: "", phone: "", password: "", state: "", referralCode: "" });
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -129,6 +129,12 @@ function ChixPay() {
     }
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) await supabase.from("profiles").upsert({ id: userData.user.id, full_name: form.fullName, phone: form.phone, state: form.state });
+    const code = form.referralCode.trim();
+    if (code) {
+      const { data: result } = await supabase.rpc("redeem_referral", { _code: code, _name: form.fullName });
+      const outcome = result as { ok?: boolean; reason?: string } | null;
+      if (outcome && !outcome.ok) setNotice(outcome.reason === "invalid_code" ? "That referral code was not recognised, so no referral was recorded." : "Your referral code could not be applied.");
+    }
     setBusy(false);
     setForm((old) => ({ ...old, email }));
     setScreen("tutorial");
