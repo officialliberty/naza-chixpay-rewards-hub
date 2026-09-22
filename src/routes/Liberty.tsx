@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Ban, CheckCircle2, Eye, FileText, Headphones, LogOut, RefreshCw, Save, Search, Send, ShieldCheck, Users, Wallet } from "lucide-react";
+import { Ban, CheckCircle2, Eye, FileText, Headphones, KeyRound, LogOut, RefreshCw, Save, Search, Send, ShieldCheck, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -139,6 +139,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [balances, setBalances] = useState<Record<string, number>>({});
   const [receiptUrls, setReceiptUrls] = useState<Record<string, string>>({});
   const [withdrawalStats, setWithdrawalStats] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
+  const [chixKeys, setChixKeys] = useState<Record<string, { code: string; uses_left: number | null; unlimited: boolean; expires_at: string | null }>>({});
 
 
 
