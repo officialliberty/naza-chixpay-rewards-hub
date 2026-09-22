@@ -51,7 +51,10 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
   const [now, setNow] = useState(() => Date.now());
   const fileInput = useRef<HTMLInputElement>(null);
 
+  const booted = useRef(false);
   useEffect(() => {
+    if (booted.current) return;
+    booted.current = true;
     let cancelled = false;
     void (async () => {
       const { data } = await supabase.auth.getUser();
