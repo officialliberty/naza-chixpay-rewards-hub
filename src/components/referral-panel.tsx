@@ -26,9 +26,9 @@ export function ReferralPanel({ onBack }: { onBack: () => void }) {
       if (!referralCode) {
         const meta = (user.user_metadata ?? {}) as { fullName?: string; phone?: string; state?: string };
         const { data: ensured } = await supabase.rpc("ensure_profile", {
-          _full_name: meta.fullName ?? null,
-          _phone: meta.phone ?? null,
-          _state: meta.state ?? null,
+          _full_name: meta.fullName ?? undefined,
+          _phone: meta.phone ?? undefined,
+          _state: meta.state ?? undefined,
         });
         referralCode = (ensured as string | null) ?? "";
       }
