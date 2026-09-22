@@ -84,6 +84,7 @@ function ChixPay() {
         phone: meta.phone ?? old.phone,
         state: meta.state ?? old.state ?? "Lagos",
       }));
+      if (await blockedIfRestricted(data.user.id)) return;
       setScreen("dashboard");
     };
 
@@ -101,12 +102,20 @@ function ChixPay() {
         phone: meta.phone ?? old.phone,
         state: meta.state ?? old.state ?? "Lagos",
       }));
-      setScreen("dashboard");
+      void blockedIfRestricted(session.user.id).then((blocked) => { if (!blocked) setScreen("dashboard"); });
     });
     return () => listener.subscription.unsubscribe();
   }, []);
 
   const update = (key: keyof FormData, value: string) => setForm((old) => ({ ...old, [key]: value }));
+  const blockedIfRestricted = async (userId: string) => {
+    const { data } = await supabase.from("profiles").select("status, restriction_reason").eq("id", userId).maybeSingle();
+    if (!data || (data.status ?? "active") === "active") return false;
+    await supabase.auth.signOut();
+    setScreen("auth");
+    setNotice(`This account is restricted${data.restriction_reason ? `: ${data.restriction_reason}` : ""}. Please contact ChixPay support.`);
+    return true;
+  };
   const login = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setNotice("");
     const email = form.email.trim().toLowerCase();
@@ -114,6 +123,7 @@ function ChixPay() {
     setBusy(false);
     if (error) return setNotice(error.message === "Invalid login credentials" ? "The email or password is incorrect. Please try again." : error.message);
     if (!data.user) return setNotice("We could not open your account. Please try again.");
+    if (await blockedIfRestricted(data.user.id)) return;
     const meta = ((data.user.user_metadata ?? {}) as Partial<FormData>);
     setForm((old) => ({ ...old, fullName: meta.fullName ?? "ChixPay member", phone: meta.phone ?? "", state: meta.state ?? "Lagos" }));
     setScreen("dashboard");
