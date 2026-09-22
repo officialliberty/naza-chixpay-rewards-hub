@@ -546,6 +546,10 @@ export type Database = {
         Returns: boolean
       }
       claim_admin: { Args: never; Returns: boolean }
+      ensure_profile: {
+        Args: { _full_name?: string; _phone?: string; _state?: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
