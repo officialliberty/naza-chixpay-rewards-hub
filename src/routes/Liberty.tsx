@@ -49,6 +49,33 @@ function CountBadge({ count }: { count: number }) {
   return <span className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-gold px-1.5 py-0.5 text-[10px] font-bold leading-none text-background">{count}</span>;
 }
 
+function PendingBadge() {
+  return <span className="rounded-full border border-gold/40 bg-gold px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-background">Pending review</span>;
+}
+
+function ReviewSection<T extends { status: string }>({ title, rows, empty, render, loading }: {
+  title: string; rows: T[]; empty: string; loading: boolean;
+  render: (row: T) => React.ReactNode;
+}) {
+  const pendingRows = rows.filter((row) => row.status === "pending");
+  const reviewedRows = rows.filter((row) => row.status !== "pending");
+  return <div className="space-y-3">
+    {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+    {!loading && rows.length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
+    {!loading && pendingRows.length > 0 && <>
+      <div className="flex items-center gap-2">
+        <h3 className="font-display text-sm font-semibold text-gold">Pending review</h3>
+        <CountBadge count={pendingRows.length}/>
+      </div>
+      {pendingRows.map(render)}
+    </>}
+    {!loading && reviewedRows.length > 0 && <>
+      <h3 className="pt-2 font-display text-sm font-semibold text-muted-foreground">{title}</h3>
+      {reviewedRows.map(render)}
+    </>}
+  </div>;
+}
+
 function StatusPill({ status }: { status: string }) {
   const tone = status === "active" || status === "approved" ? "border-leaf/30 bg-leaf/12 text-leaf"
     : status === "pending" ? "border-gold/30 bg-gold/12 text-gold"
