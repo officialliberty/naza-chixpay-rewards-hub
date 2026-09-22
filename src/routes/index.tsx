@@ -19,6 +19,7 @@ import { ProfilePage } from "@/components/profile-page";
 import { SupportPage } from "@/components/support-page";
 import { TasksPage } from "@/components/tasks-page";
 import { RestrictedScreen } from "@/components/restricted-screen";
+import { AlertOverlay } from "@/components/alert-overlay";
 
 import nairaNote from "@/assets/naira-1000-clean.png";
 
@@ -389,6 +390,15 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
     setMessage(`${completed} action completed.`);
   };
   const activeCopy = activeAction ? actionCopy[activeAction] : undefined;
+  const pendingAlerts = notifications.filter((item) => !item.read_at).slice().reverse();
+  const alertNotice = pendingAlerts[0];
+  const dismissAlert = () => {
+    if (!alertNotice) return;
+    const stamp = new Date().toISOString();
+    setNotifications((current) => current.map((item) => item.id === alertNotice.id ? { ...item, read_at: stamp } : item));
+    void supabase.from("notifications").update({ read_at: stamp }).eq("id", alertNotice.id);
+  };
+  if (alertNotice) return <Shell><AlertOverlay notice={alertNotice} remaining={pendingAlerts.length} onDismiss={dismissAlert}/></Shell>;
   if (view === "upgrade") return <Shell><UpgradeFlow onBack={() => setView("home")}/></Shell>;
   if (view === "referral") return <Shell><ReferralPanel onBack={() => setView("home")}/></Shell>;
   if (view === "chixid") return <Shell><ChixIdFlow onBack={() => setView("home")} onActivated={() => setChixIdActive(true)}/></Shell>;

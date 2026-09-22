@@ -280,11 +280,14 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       : <Button variant="glass" size="sm" onClick={() => void setStatus(user, "active")}><CheckCircle2/> Restore access</Button>;
   };
 
+  const isBanned = (userId: string) => (users.find((item) => item.id === userId)?.status ?? "active") !== "active";
+  const stillOpen = (status: string, userId: string) => status === "pending" && !isBanned(userId);
+
   const policyPanel = (kind: "fee" | "upgrade" | "final", empty: string) => <Panel className="mt-3">
     <div className="space-y-3">
       {loading && <p className="text-sm text-muted-foreground">Loading payments…</p>}
-      {!loading && withdrawPayments.filter((row) => row.kind === kind).length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
-      {withdrawPayments.filter((row) => row.kind === kind).map((row) => <div key={row.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+      {!loading && withdrawPayments.filter((row) => row.kind === kind && stillOpen(row.status, row.user_id)).length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
+      {withdrawPayments.filter((row) => row.kind === kind && stillOpen(row.status, row.user_id)).map((row) => <div key={row.id} className="rounded-2xl border border-glass-border bg-glass p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="font-display text-sm font-semibold">{row.plan_name ?? row.kind} · {money(row.amount)}</p>
@@ -313,11 +316,13 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   }, [users, query]);
 
   const restricted = users.filter((user) => (user.status ?? "active") !== "active").length;
-  const pending = requests.filter((request) => request.status === "pending").length;
-  const pendingChix = chixRequests.filter((request) => request.status === "pending").length;
-  const pendingFee = withdrawPayments.filter((row) => row.kind === "fee" && row.status === "pending").length;
-  const pendingWUpgrade = withdrawPayments.filter((row) => row.kind === "upgrade" && row.status === "pending").length;
-  const pendingFinal = withdrawPayments.filter((row) => row.kind === "final" && row.status === "pending").length;
+  const openUpgrades = requests.filter((request) => stillOpen(request.status, request.user_id));
+  const openChix = chixRequests.filter((request) => stillOpen(request.status, request.user_id));
+  const pending = openUpgrades.length;
+  const pendingChix = openChix.length;
+  const pendingFee = withdrawPayments.filter((row) => row.kind === "fee" && stillOpen(row.status, row.user_id)).length;
+  const pendingWUpgrade = withdrawPayments.filter((row) => row.kind === "upgrade" && stillOpen(row.status, row.user_id)).length;
+  const pendingFinal = withdrawPayments.filter((row) => row.kind === "final" && stillOpen(row.status, row.user_id)).length;
   const totalBalance = Object.values(balances).reduce((sum, value) => sum + value, 0);
   const totalReferrals = users.reduce((sum, user) => sum + user.referral_count, 0);
   const approvedPayments = requests.filter((r) => r.status === "approved").length + chixRequests.filter((r) => r.status === "approved").length;
@@ -460,8 +465,8 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Panel className="mt-3">
           <div className="space-y-3">
             {loading && <p className="text-sm text-muted-foreground">Loading Chix ID payments…</p>}
-            {!loading && chixRequests.length === 0 && <p className="text-sm text-muted-foreground">No Chix ID payments yet.</p>}
-            {chixRequests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+            {!loading && openChix.length === 0 && <p className="text-sm text-muted-foreground">No Chix ID payments waiting for review.</p>}
+            {openChix.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
@@ -522,8 +527,8 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       {tab === "upgrades" && <Panel className="mt-3">
         <div className="space-y-3">
           {loading && <p className="text-sm text-muted-foreground">Loading requests…</p>}
-          {!loading && requests.length === 0 && <p className="text-sm text-muted-foreground">No upgrade requests yet.</p>}
-          {requests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+          {!loading && openUpgrades.length === 0 && <p className="text-sm text-muted-foreground">No upgrade payments waiting for review.</p>}
+          {openUpgrades.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
