@@ -99,6 +99,13 @@
       "when": 1790095930895,
       "tag": "0013_payout_account_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790096350068,
+      "tag": "0014_ensure_profile_backfill",
+      "breakpoints": true
     }
   ]
 }
