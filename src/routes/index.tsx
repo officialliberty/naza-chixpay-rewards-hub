@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import nairaNote from "@/assets/naira-1000.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -32,8 +33,8 @@ function MoneyBackdrop() {
     <div className="glow-breathe absolute -top-28 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-leaf/35 blur-3xl" />
     <div className="absolute top-1/4 -right-20 h-72 w-72 rounded-full bg-brand/25 blur-3xl" />
     <div className="absolute bottom-0 -left-24 h-72 w-72 rounded-full bg-gold/15 blur-3xl" />
-    {["top-[14%] left-[4%] note-float","top-[38%] right-[4%] note-float-two","bottom-[18%] left-[8%] note-float","bottom-[7%] right-[12%] note-float-two"].map((pos, i) =>
-      <div key={pos} className={`absolute ${pos} grid h-9 w-16 place-items-center rounded-lg border border-glass-border bg-glass backdrop-blur-sm`}><span className={`font-display text-[9px] font-semibold ${i % 2 ? "text-gold" : "text-leaf"}`}>₦1,000</span></div>
+    {["top-[14%] left-[4%] note-float","top-[38%] right-[4%] note-float-two","bottom-[18%] left-[8%] note-float","bottom-[7%] right-[12%] note-float-two"].map((pos) =>
+      <div key={pos} className={`absolute ${pos} h-9 w-[74px] overflow-hidden rounded-md border border-glass-border opacity-35 shadow-brand`}><img src={nairaNote.url} alt="" className="h-full w-full object-cover" /></div>
     )}
   </div>;
 }
