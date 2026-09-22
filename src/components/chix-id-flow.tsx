@@ -47,6 +47,8 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState(false);
   const [chixId, setChixId] = useState("");
+  const [keyInfo, setKeyInfo] = useState<KeyInfo | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
