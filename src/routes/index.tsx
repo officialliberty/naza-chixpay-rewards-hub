@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowDownToLine, BadgeCheck, Bell, ChevronRight, CirclePlay, Clock3,
-  History, IdCard, Megaphone, Play, Sparkles, Star, Trophy, Users, Wallet,
+  Check, Eye, EyeOff, History, IdCard, LockKeyhole, Megaphone, Play,
+  ShieldCheck, Sparkles, Star, Trophy, Users, Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,8 +42,19 @@ function Shell({ children }: { children: React.ReactNode }) {
   return <main className="relative min-h-screen overflow-hidden bg-background text-foreground"><MoneyBackdrop/><div className="relative z-10 mx-auto min-h-screen w-full max-w-[430px] px-5 py-6">{children}</div></main>;
 }
 
+function PublicShell({ children }: { children: React.ReactNode }) {
+  return <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+      <div className="public-aura absolute inset-x-0 top-0 h-[62vh]" />
+      <div className="absolute left-[8%] top-[20%] h-px w-24 bg-leaf/30" />
+      <div className="absolute right-[8%] top-[36%] h-px w-16 bg-brand/30" />
+    </div>
+    <div className="relative z-10 mx-auto min-h-screen w-full max-w-6xl px-5 py-5 sm:px-8 lg:px-10">{children}</div>
+  </main>;
+}
+
 function Brand() {
-  return <div className="flex items-center gap-2.5"><div className="grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-brand to-leaf font-display text-lg font-bold shadow-brand">₦</div><div><p className="font-display text-lg font-bold leading-none">ChixPay</p><p className="mt-1 text-[10px] text-muted-foreground">Rewards that keep moving</p></div></div>;
+  return <div className="flex items-center gap-2.5"><div className="grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-leaf to-brand font-display text-lg font-bold text-primary-foreground shadow-brand">C</div><div><p className="font-display text-lg font-bold leading-none">Chix<span className="text-gold">Pay</span></p><p className="mt-1 text-[10px] text-muted-foreground">Move forward with rewards</p></div></div>;
 }
 
 function ChixPay() {
@@ -51,6 +63,8 @@ function ChixPay() {
   const [form, setForm] = useState<FormData>({ fullName: "", email: "", phone: "", password: "", state: "" });
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const update = (key: keyof FormData, value: string) => setForm((old) => ({ ...old, [key]: value }));
   const login = async (event: FormEvent) => {
@@ -62,7 +76,11 @@ function ChixPay() {
     setForm((old) => ({ ...old, fullName: meta.fullName ?? "ChixPay member", phone: meta.phone ?? "", state: meta.state ?? "Lagos" }));
     setScreen("dashboard");
   };
-  const beginSignup = (event: FormEvent) => { event.preventDefault(); setScreen("state"); };
+  const beginSignup = (event: FormEvent) => {
+    event.preventDefault();
+    if (!termsAccepted) return setNotice("Please accept the Terms and Privacy Notice to continue.");
+    setNotice(""); setScreen("state");
+  };
   const finishSignup = async () => {
     setBusy(true); setNotice("");
     const { data, error } = await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { fullName: form.fullName, phone: form.phone, state: form.state } } });
@@ -77,45 +95,60 @@ function ChixPay() {
 
   if (screen === "dashboard") return <Dashboard name={form.fullName || "ChixPay member"} state={form.state || "Lagos"} />;
 
-  return <Shell>
-    <header className="flex items-center justify-between"><Brand/>{screen !== "landing" && <Button variant="glass" size="sm" onClick={() => setScreen("landing")}>Exit</Button>}</header>
-    {screen === "landing" && <section className="flex min-h-[calc(100vh-88px)] flex-col justify-center pb-8">
-      <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-glass-border bg-glass px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-xl"><Sparkles className="size-3.5 text-gold"/> Welcome bonus unlocked</div>
-      <h1 className="font-display text-[42px] font-semibold leading-[1.08]">Your money.<br/><span className="text-leaf">More rewarding.</span></h1>
-      <p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground">Join ChixPay and unlock a ₦170,000 welcome bonus, daily tasks, videos, and referral rewards.</p>
-      <div className="relative mt-8 overflow-hidden rounded-[28px] border border-glass-border bg-glass-strong p-5 backdrop-blur-2xl">
-        <div className="glass-sheen pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-foreground/10 to-transparent"/>
-        <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Welcome balance</p><p className="mt-1 font-display text-4xl font-semibold">₦170,000</p>
-        <div className="mt-5 flex items-center justify-between rounded-2xl border border-leaf/25 bg-leaf/10 p-3"><div><p className="text-[10px] text-leaf">EVERY 10 MINUTES</p><p className="font-display text-xl font-semibold">Claim ₦35,000</p></div><Clock3 className="size-8 text-gold"/></div>
+  return <PublicShell>
+    <header className="flex items-center justify-between"><Brand/><div className="flex items-center gap-2">{screen === "landing" ? <Button variant="glass" size="sm" onClick={() => { setMode("login"); setScreen("auth"); }}>Log in</Button> : <Button variant="glass" size="sm" onClick={() => setScreen("landing")}>Back</Button>}</div></header>
+
+    {screen === "landing" && <section className="landing-enter grid min-h-[calc(100vh-80px)] items-center gap-10 py-10 lg:grid-cols-[1.08fr_.92fr] lg:py-16">
+      <div className="max-w-xl">
+        <div className="inline-flex items-center gap-2 rounded-full border border-leaf/25 bg-leaf/10 px-3 py-1.5 text-xs text-leaf backdrop-blur-xl"><Sparkles className="size-3.5"/> A smarter way to earn rewards</div>
+        <h1 className="mt-6 font-display text-[42px] font-semibold leading-[1.07] sm:text-5xl lg:text-6xl">Move money forward.<br/><span className="text-leaf">Get rewarded.</span></h1>
+        <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">ChixPay brings rewards, tasks, videos, and referrals into one clear experience built for everyday Nigerians.</p>
+        <p className="mt-4 flex items-start gap-2 text-sm text-foreground/80"><Check className="mt-0.5 size-4 shrink-0 text-gold"/> New members can unlock a ₦170,000 welcome offer after registration.</p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Button variant="reward" size="lg" className="sm:min-w-48" onClick={() => { setMode("signup"); setScreen("auth"); }}>Create free account <ChevronRight/></Button>
+          <Button variant="glass" size="lg" className="sm:min-w-40" onClick={() => { setMode("login"); setScreen("auth"); }}>Log in securely</Button>
+        </div>
+        <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground"><LockKeyhole className="size-3.5 text-leaf"/> Your sign-in details are encrypted and handled securely.</p>
       </div>
-      <Button variant="reward" size="lg" className="mt-6 w-full" onClick={() => { setMode("signup"); setScreen("auth"); }}>Create free account <ChevronRight/></Button>
-      <Button variant="glass" size="lg" className="mt-3 w-full" onClick={() => { setMode("login"); setScreen("auth"); }}>I already have an account</Button>
-      <button className="mt-5 text-xs text-muted-foreground underline underline-offset-4" onClick={() => setScreen("dashboard")}>Preview dashboard</button>
+
+      <div className="relative mx-auto w-full max-w-md">
+        <div className="relative overflow-hidden rounded-[32px] border border-glass-border bg-glass p-5 shadow-brand backdrop-blur-2xl sm:p-7">
+          <div className="glass-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-foreground/10 to-transparent"/>
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-leaf">CHIXPAY EXPERIENCE</span><span className="size-2 rounded-full bg-gold"/></div>
+          <h2 className="mt-8 font-display text-2xl font-semibold">Everything in one place.</h2>
+          <div className="mt-6 space-y-3">
+            {[{icon: BadgeCheck,title:"Complete verified tasks",text:"See opportunities clearly before you begin."},{icon: CirclePlay,title:"Watch and earn",text:"Discover eligible video rewards in one feed."},{icon: Users,title:"Invite your people",text:"Track referral activity from your account."}].map(({icon:Icon,title,text}) => <div key={title} className="flex gap-3 rounded-2xl border border-glass-border bg-glass p-3.5"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-leaf/15 text-leaf"><Icon className="size-5"/></span><div><p className="text-sm font-semibold">{title}</p><p className="mt-0.5 text-xs leading-5 text-muted-foreground">{text}</p></div></div>)}
+          </div>
+        </div>
+      </div>
     </section>}
 
-    {screen === "auth" && <section className="pt-10">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-leaf">{mode === "signup" ? "Join ChixPay" : "Welcome back"}</p>
-      <h1 className="mt-2 font-display text-3xl font-semibold">{mode === "signup" ? "Create your wallet" : "Log in to your wallet"}</h1>
-      <form className="mt-7 space-y-3" onSubmit={mode === "signup" ? beginSignup : login}>
-        {mode === "signup" && <><Input required placeholder="Full name" value={form.fullName} onChange={(e) => update("fullName", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-glass px-4 backdrop-blur-xl"/><Input required type="tel" placeholder="Phone number" value={form.phone} onChange={(e) => update("phone", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-glass px-4 backdrop-blur-xl"/></>}
-        <Input required type="email" placeholder="Email address" value={form.email} onChange={(e) => update("email", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-glass px-4 backdrop-blur-xl"/>
-        <Input required minLength={6} type="password" placeholder="Password" value={form.password} onChange={(e) => update("password", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-glass px-4 backdrop-blur-xl"/>
-        {notice && <p className="rounded-xl bg-destructive/15 p-3 text-xs text-destructive-foreground">{notice}</p>}
-        <Button disabled={busy} variant="reward" size="lg" className="w-full">{busy ? "Please wait…" : mode === "signup" ? "Choose my state" : "Log in"}<ChevronRight/></Button>
-      </form>
-      <div className="my-5 flex items-center gap-3 text-[10px] text-muted-foreground"><span className="h-px flex-1 bg-border"/>OR<span className="h-px flex-1 bg-border"/></div>
-      <Button variant="glass" size="lg" className="w-full" onClick={googleLogin}><span className="font-display text-base">G</span> Continue with Google</Button>
-      <button className="mt-6 w-full text-sm text-muted-foreground" onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setNotice(""); }}>{mode === "signup" ? "Already registered? Log in" : "New here? Create an account"}</button>
+    {screen === "auth" && <section className="auth-enter mx-auto grid min-h-[calc(100vh-80px)] max-w-5xl items-center gap-10 py-8 lg:grid-cols-[.8fr_1.2fr] lg:py-12">
+      <div className="hidden max-w-sm lg:block"><p className="text-xs font-semibold text-leaf">ACCOUNT OPENING</p><h1 className="mt-4 font-display text-4xl font-semibold leading-tight">A secure start to your ChixPay journey.</h1><p className="mt-4 text-sm leading-6 text-muted-foreground">Create your profile, choose your state, and take a quick guided tour before opening your account.</p><div className="mt-8 space-y-4">{["Your details stay private","Clear step-by-step setup","Access your account from any device"].map((text) => <p key={text} className="flex items-center gap-3 text-sm"><span className="grid size-7 place-items-center rounded-full bg-leaf/15 text-leaf"><Check className="size-4"/></span>{text}</p>)}</div></div>
+      <div className="mx-auto w-full max-w-xl rounded-[32px] border border-glass-border bg-glass p-5 shadow-brand backdrop-blur-2xl sm:p-8">
+        <div className="flex items-center justify-between"><div><p className="text-xs font-semibold text-leaf">{mode === "signup" ? "STEP 1 OF 2" : "SECURE SIGN IN"}</p><h1 className="mt-2 font-display text-2xl font-semibold sm:text-3xl">{mode === "signup" ? "Create your account" : "Welcome back"}</h1><p className="mt-2 text-sm text-muted-foreground">{mode === "signup" ? "Enter your details exactly as you use them." : "Use the email linked to your ChixPay account."}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-leaf/15 text-leaf"><ShieldCheck/></span></div>
+        {mode === "signup" && <div className="mt-6 grid grid-cols-2 gap-2"><span className="h-1.5 rounded-full bg-gold"/><span className="h-1.5 rounded-full bg-glass-strong"/></div>}
+        <form className="mt-6 space-y-4" onSubmit={mode === "signup" ? beginSignup : login}>
+          {mode === "signup" && <><label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Full legal name</span><Input required autoComplete="name" placeholder="e.g. Adaeze Okafor" value={form.fullName} onChange={(e) => update("fullName", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4"/></label><label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Phone number</span><div className="flex h-13 overflow-hidden rounded-2xl border border-glass-border bg-background/45 focus-within:ring-1 focus-within:ring-ring"><span className="grid place-items-center border-r border-glass-border px-4 text-sm font-semibold">+234</span><Input required autoComplete="tel" inputMode="tel" placeholder="801 234 5678" value={form.phone} onChange={(e) => update("phone", e.target.value)} className="h-full rounded-none border-0 bg-transparent px-4 focus-visible:ring-0"/></div></label></>}
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Email address</span><Input required autoComplete="email" type="email" placeholder="you@example.com" value={form.email} onChange={(e) => update("email", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Password</span><div className="relative"><Input required autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={6} type={showPassword ? "text" : "password"} placeholder={mode === "signup" ? "At least 6 characters" : "Enter your password"} value={form.password} onChange={(e) => update("password", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4 pr-12"/><Button type="button" variant="ghost" size="icon" aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-2 top-2 rounded-xl text-muted-foreground" onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff/> : <Eye/>}</Button></div></label>
+          {mode === "signup" && <label className="flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted-foreground"><input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-0.5 size-4 accent-[var(--gold)]"/><span>I agree to the <span className="font-semibold text-foreground">Terms of Use</span> and acknowledge the <span className="font-semibold text-foreground">Privacy Notice</span>.</span></label>}
+          {notice && <p role="alert" className="rounded-xl border border-destructive/25 bg-destructive/15 p-3 text-xs text-destructive-foreground">{notice}</p>}
+          <Button disabled={busy} variant="reward" size="lg" className="w-full">{busy ? "Please wait…" : mode === "signup" ? "Continue" : "Log in securely"}<ChevronRight/></Button>
+        </form>
+        <div className="my-5 flex items-center gap-3 text-[10px] text-muted-foreground"><span className="h-px flex-1 bg-border"/>OR CONTINUE WITH<span className="h-px flex-1 bg-border"/></div>
+        <Button variant="glass" size="lg" className="w-full" onClick={googleLogin}><span className="grid size-6 place-items-center rounded-full bg-foreground font-display text-xs text-background">G</span> Google</Button>
+        <Button variant="ghost" className="mt-4 w-full text-sm text-muted-foreground" onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setNotice(""); }}>{mode === "signup" ? "Already have an account? Log in" : "New to ChixPay? Create an account"}</Button>
+      </div>
     </section>}
 
-    {screen === "state" && <section className="pt-10"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-leaf">One last detail</p><h1 className="mt-2 font-display text-3xl font-semibold">Where do you live?</h1><p className="mt-2 text-sm text-muted-foreground">We use your state to personalise available tasks and rewards.</p>
-      <label className="mt-8 block text-xs font-medium text-muted-foreground">State</label><select value={form.state} onChange={(e) => update("state", e.target.value)} className="mt-2 h-13 w-full rounded-2xl border border-glass-border bg-glass px-4 text-sm outline-none backdrop-blur-xl"><option value="">Select your state</option>{states.map((state) => <option className="bg-ink" key={state}>{state}</option>)}</select>
+    {screen === "state" && <section className="auth-enter mx-auto flex min-h-[calc(100vh-80px)] max-w-lg items-center py-8"><div className="w-full rounded-[32px] border border-glass-border bg-glass p-6 shadow-brand backdrop-blur-2xl sm:p-8"><div className="flex items-center justify-between"><div><p className="text-xs font-semibold text-leaf">STEP 2 OF 2</p><h1 className="mt-2 font-display text-3xl font-semibold">Choose your state</h1></div><span className="grid size-11 place-items-center rounded-2xl bg-brand/15 text-brand"><ShieldCheck/></span></div><p className="mt-3 text-sm leading-6 text-muted-foreground">This helps us personalise the tasks and rewards available to you.</p><div className="mt-6 grid grid-cols-2 gap-2"><span className="h-1.5 rounded-full bg-gold"/><span className="h-1.5 rounded-full bg-gold"/></div>
+      <label className="mt-7 block text-xs font-semibold text-muted-foreground">State of residence</label><select value={form.state} onChange={(e) => update("state", e.target.value)} className="mt-2 h-13 w-full rounded-2xl border border-glass-border bg-background/60 px-4 text-sm outline-none focus:ring-1 focus:ring-ring"><option value="">Select your state</option>{states.map((state) => <option className="bg-ink" key={state}>{state}</option>)}</select>
       {notice && <p className="mt-3 rounded-xl bg-destructive/15 p-3 text-xs">{notice}</p>}
-      <Button disabled={!form.state || busy} variant="reward" size="lg" className="mt-5 w-full" onClick={finishSignup}>{busy ? "Creating account…" : "Continue to tutorial"}<ChevronRight/></Button>
-    </section>}
+      <Button disabled={!form.state || busy} variant="reward" size="lg" className="mt-5 w-full" onClick={finishSignup}>{busy ? "Creating account…" : "Create my account"}<ChevronRight/></Button><Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => setScreen("auth")}>Back to my details</Button></div></section>}
 
-    {screen === "tutorial" && <Tutorial onDone={() => setScreen("dashboard")}/>} 
-  </Shell>;
+    {screen === "tutorial" && <div className="mx-auto max-w-[430px]"><Tutorial onDone={() => setScreen("dashboard")}/></div>}
+  </PublicShell>;
 }
 
 function Tutorial({ onDone }: { onDone: () => void }) {
