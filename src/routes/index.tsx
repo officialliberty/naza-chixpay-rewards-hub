@@ -175,6 +175,8 @@ function ChixPay() {
     if (result.error) setNotice(result.error.message);
   };
 
+  const markRestricted = useCallback((reason: string | null) => setRestriction({ reason }), []);
+
   const logout = async () => {
     await supabase.auth.signOut();
     setForm((old) => ({ ...old, password: "" }));
