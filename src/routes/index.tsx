@@ -284,7 +284,9 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
   const [cashBurst, setCashBurst] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) + taskEarned + adjustments - withdrawn;
+  const [referralHistory, setReferralHistory] = useState<{ id: string; name: string; amount: number; at: number }[]>([]);
+  const referralEarned = referralHistory.reduce((total, entry) => total + entry.amount, 0);
+  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) + taskEarned + adjustments + referralEarned - withdrawn;
   const unread = notifications.filter((item) => !item.read_at).length;
   useEffect(() => {
     let cancelled = false;
