@@ -84,6 +84,7 @@ function ChixPay() {
         phone: meta.phone ?? old.phone,
         state: meta.state ?? old.state ?? "Lagos",
       }));
+      if (await blockedIfRestricted(data.user.id)) return;
       setScreen("dashboard");
     };
 
