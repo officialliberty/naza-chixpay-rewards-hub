@@ -98,6 +98,27 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_claims: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       upgrade_requests: {
         Row: {
           amount: number
