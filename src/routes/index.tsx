@@ -274,7 +274,9 @@ const WELCOME_BONUS = 170000;
 const CLAIM_AMOUNT = 35000;
 const CLAIM_COOLDOWN = 10 * 60 * 1000;
 
-function Dashboard({ name, state, onLogout }: { name: string; state: string; onLogout: () => Promise<void> }) {
+type NotificationRecord = { id: string; title: string; body: string; created_at: string; read_at: string | null };
+
+function Dashboard({ name, state, onLogout, onRestricted }: { name: string; state: string; onLogout: () => Promise<void>; onRestricted: (reason: string | null) => void }) {
   const [nextClaimAt, setNextClaimAt] = useState(() => Date.now());
   const [seconds, setSeconds] = useState(0); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
@@ -283,10 +285,13 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
   const [taskEarned, setTaskEarned] = useState(0);
   const [claimHistory, setClaimHistory] = useState<ClaimRecord[]>([]);
   const [withdrawn, setWithdrawn] = useState(0);
+  const [adjustments, setAdjustments] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [cashBurst, setCashBurst] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) + taskEarned - withdrawn;
+  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) + taskEarned + adjustments - withdrawn;
+  const unread = notifications.filter((item) => !item.read_at).length;
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -294,16 +299,21 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
       const id = data.user?.id;
       if (!id || cancelled) return;
       setUserId(id);
-      const [claims, payouts, key, profile, tasks] = await Promise.all([
+      const [claims, payouts, key, profile, tasks, extras, alerts] = await Promise.all([
         supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false }),
         supabase.from("withdrawals").select("amount").eq("user_id", id),
         supabase.from("chix_keys").select("uses_left, unlimited").eq("user_id", id).maybeSingle(),
-        supabase.from("profiles").select("avatar_path").eq("id", id).maybeSingle(),
+        supabase.from("profiles").select("avatar_path, status, restriction_reason").eq("id", id).maybeSingle(),
         supabase.from("task_completions").select("amount").eq("user_id", id),
+        supabase.from("balance_adjustments").select("amount").eq("user_id", id),
+        supabase.from("notifications").select("id, title, body, created_at, read_at").eq("user_id", id).order("created_at", { ascending: false }).limit(30),
       ]);
       if (cancelled) return;
+      if (profile.data && (profile.data.status ?? "active") !== "active") { onRestricted(profile.data.restriction_reason ?? null); return; }
       if (payouts.data) setWithdrawn(payouts.data.reduce((total, row) => total + Number(row.amount), 0));
       if (tasks.data) setTaskEarned(tasks.data.reduce((total, row) => total + Number(row.amount), 0));
+      if (extras.data) setAdjustments(extras.data.reduce((total, row) => total + Number(row.amount), 0));
+      if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
       if (key.data) setChixIdActive(Boolean(key.data.unlimited) || (key.data.uses_left ?? 0) > 0);
       if (profile.data?.avatar_path) {
         const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(profile.data.avatar_path, 60 * 60 * 24);
@@ -316,7 +326,20 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
       if (latest) setNextClaimAt(new Date(latest.created_at).getTime() + CLAIM_COOLDOWN);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [onRestricted]);
+  useEffect(() => {
+    if (!userId) return;
+    const check = async () => {
+      const [profile, alerts] = await Promise.all([
+        supabase.from("profiles").select("status, restriction_reason").eq("id", userId).maybeSingle(),
+        supabase.from("notifications").select("id, title, body, created_at, read_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(30),
+      ]);
+      if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
+      if (profile.data && (profile.data.status ?? "active") !== "active") onRestricted(profile.data.restriction_reason ?? null);
+    };
+    const timer = window.setInterval(() => void check(), 30000);
+    return () => window.clearInterval(timer);
+  }, [userId, onRestricted]);
   useEffect(() => {
     const updateCountdown = () => setSeconds(Math.max(0, Math.ceil((nextClaimAt - Date.now()) / 1000)));
     updateCountdown();
