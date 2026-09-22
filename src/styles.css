@@ -189,6 +189,16 @@
   from { opacity: 0; transform: translateY(10px) scale(.99); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes cash-fall {
+  0% { opacity: 0; transform: translate3d(0, -10vh, 0) rotate(-18deg) scale(.8); }
+  10% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--cash-drift), 112vh, 0) rotate(var(--cash-spin)) scale(1); }
+}
+@keyframes claim-pop {
+  0% { opacity: 0; transform: translate(-50%, 14px) scale(.72); }
+  18%, 70% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -18px) scale(.94); }
+}
 
 @utility note-float { animation: note-float 6.5s ease-in-out infinite; will-change: transform; }
 @utility note-float-two { animation: note-float-two 8s ease-in-out infinite; will-change: transform; }
@@ -196,6 +206,21 @@
 @utility glass-sheen { animation: sheen 5s ease-in-out infinite; }
 @utility landing-enter { animation: landing-enter .65s cubic-bezier(.22,1,.36,1) both; }
 @utility auth-enter { animation: auth-enter .45s cubic-bezier(.22,1,.36,1) both; }
+@utility cash-fall { animation: cash-fall 3.2s cubic-bezier(.15,.72,.35,1) both; }
+@utility claim-pop { animation: claim-pop 2.3s cubic-bezier(.22,1,.36,1) both; }
+
+.cash-path-1 { left: 3%; animation-delay: 0s; --cash-drift: 35px; --cash-spin: 215deg; }
+.cash-path-2 { left: 12%; animation-delay: .35s; --cash-drift: -26px; --cash-spin: -190deg; }
+.cash-path-3 { left: 21%; animation-delay: .12s; --cash-drift: 42px; --cash-spin: 170deg; }
+.cash-path-4 { left: 30%; animation-delay: .62s; --cash-drift: -38px; --cash-spin: -240deg; }
+.cash-path-5 { left: 39%; animation-delay: .24s; --cash-drift: 28px; --cash-spin: 205deg; }
+.cash-path-6 { left: 48%; animation-delay: .78s; --cash-drift: -22px; --cash-spin: -165deg; }
+.cash-path-7 { left: 57%; animation-delay: .08s; --cash-drift: 34px; --cash-spin: 235deg; }
+.cash-path-8 { left: 66%; animation-delay: .5s; --cash-drift: -40px; --cash-spin: -200deg; }
+.cash-path-9 { left: 75%; animation-delay: .2s; --cash-drift: 24px; --cash-spin: 180deg; }
+.cash-path-10 { left: 84%; animation-delay: .7s; --cash-drift: -32px; --cash-spin: -225deg; }
+.cash-path-11 { left: 92%; animation-delay: .3s; --cash-drift: -46px; --cash-spin: 195deg; }
+.cash-path-12 { left: 44%; animation-delay: 1s; --cash-drift: 48px; --cash-spin: -210deg; }
 
 @keyframes chix-orbit { to { transform: rotate(360deg); } }
 @keyframes chix-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .85; } }
@@ -211,5 +236,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .note-float, .note-float-two, .glow-breathe, .glass-sheen, .landing-enter, .auth-enter, .chix-orbit, .chix-pulse, .chix-bar { animation: none; }
+  .note-float, .note-float-two, .glow-breathe, .glass-sheen, .landing-enter, .auth-enter, .chix-orbit, .chix-pulse, .chix-bar, .cash-fall, .claim-pop { animation: none; }
 }
