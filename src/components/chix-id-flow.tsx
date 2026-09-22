@@ -76,6 +76,12 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
   }, [onActivated]);
 
   useEffect(() => {
+    if (step !== "approved" || !keyInfo?.expires_at) return undefined;
+    const tick = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [step, keyInfo]);
+
+  useEffect(() => {
     if (step !== "loading") return undefined;
     const timer = window.setTimeout(() => setStep("payment"), 2200);
     return () => window.clearTimeout(timer);
