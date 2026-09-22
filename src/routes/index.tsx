@@ -14,7 +14,7 @@ import logoMark from "@/assets/chixpay-logo.png";
 import { UpgradeFlow } from "@/components/upgrade-flow";
 import { ReferralPanel } from "@/components/referral-panel";
 
-import nairaNote from "@/assets/naira-1000.png.asset.json";
+import nairaNote from "@/assets/naira-1000-clean.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
