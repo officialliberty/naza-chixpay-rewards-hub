@@ -350,6 +350,53 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          kind: string
+          plan_name: string | null
+          receipt_path: string | null
+          reviewed_at: string | null
+          status: string
+          user_id: string
+          withdrawal_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          kind: string
+          plan_name?: string | null
+          receipt_path?: string | null
+          reviewed_at?: string | null
+          status?: string
+          user_id: string
+          withdrawal_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          plan_name?: string | null
+          receipt_path?: string | null
+          reviewed_at?: string | null
+          status?: string
+          user_id?: string
+          withdrawal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_payments_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "withdrawals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       withdrawals: {
         Row: {
           account_number: string
@@ -358,6 +405,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          stage: string
           status: string
           user_id: string
         }
@@ -368,6 +416,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
+          stage?: string
           status?: string
           user_id: string
         }
@@ -378,6 +427,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          stage?: string
           status?: string
           user_id?: string
         }
@@ -448,6 +498,26 @@ export type Database = {
           upgrade_count: number
         }[]
       }
+      admin_list_withdrawal_payments: {
+        Args: { _kind: string }
+        Returns: {
+          account_number: string
+          amount: number
+          bank_name: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          kind: string
+          plan_name: string
+          receipt_path: string
+          stage: string
+          status: string
+          user_id: string
+          withdraw_amount: number
+          withdrawal_id: string
+        }[]
+      }
       admin_send_notification: {
         Args: { _body: string; _title: string; _user_id: string }
         Returns: boolean
@@ -466,6 +536,10 @@ export type Database = {
       }
       admin_set_upgrade_status: {
         Args: { _request_id: string; _status: string }
+        Returns: boolean
+      }
+      admin_set_withdrawal_payment_status: {
+        Args: { _payment_id: string; _status: string }
         Returns: boolean
       }
       claim_admin: { Args: never; Returns: boolean }

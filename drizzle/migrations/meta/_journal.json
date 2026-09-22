@@ -71,6 +71,13 @@
       "when": 1790087071010,
       "tag": "0009_notifications_and_balance_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790090003778,
+      "tag": "0010_withdrawal_policy_payments",
+      "breakpoints": true
     }
   ]
 }
