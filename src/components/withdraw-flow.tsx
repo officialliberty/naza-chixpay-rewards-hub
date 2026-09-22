@@ -114,6 +114,20 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
 
   const pending = payments.find((item) => item.status === "pending");
   const stage = active?.stage ?? "fee";
+  const rejected = !pending && payments.find((item) => item.status === "rejected" && item.kind === stage);
+  const stageLabel = stage === "fee" ? "withdrawal fee" : stage === "upgrade" ? "upgrade" : "final";
+
+  useEffect(() => {
+    if (stage !== "upgrade" || plan) return;
+    const last = payments.find((item) => item.kind === "upgrade" && item.plan_name);
+    const match = upgradePlans.find((item) => item.name === last?.plan_name);
+    if (match) setPlan(match);
+  }, [stage, plan, payments]);
+
+  const rejectedNotice = rejected ? <div className="auth-enter mt-5 rounded-[26px] border border-destructive/30 bg-destructive/15 p-4">
+    <div className="flex items-center gap-2"><ShieldAlert className="size-4"/><p className="text-[10px] font-semibold uppercase tracking-[0.14em]">Payment rejected</p></div>
+    <p className="mt-2 text-[11px] leading-5 text-muted-foreground">Your {stageLabel} payment receipt was not approved, so your withdrawal stays on this step. Pay again to the account below and upload a clear receipt — you move to the next step only after it is approved.</p>
+  </div> : null;
   const stageAmount = stage === "fee" ? WITHDRAW_FEE : stage === "final" ? FINAL_FEE : plan?.amount ?? 0;
 
   const uploadPayment = async () => {
@@ -262,13 +276,15 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
           <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={onBack}>Back to wallet</Button>
         </div>}
 
+        {rejectedNotice}
+
         {!pending && stage === "fee" && paymentCard(
           "Pay the withdrawal fee to",
           "New ChixPay policy: every withdrawal is cleared with a one-time withdrawal fee of ₦7,600. Pay to the same account below and upload your receipt for approval.",
           "New policy · withdrawal fee")}
 
         {!pending && stage === "upgrade" && <div className="auth-enter mt-5 space-y-3">
-          <p className="text-xs leading-5 text-muted-foreground">Your withdrawal fee was approved. Choose an upgrade plan to unlock your payout, then pay and upload your receipt.</p>
+          <p className="text-xs leading-5 text-muted-foreground">{rejected ? "Choose your upgrade plan again, pay and upload a valid receipt to continue." : "Your withdrawal fee was approved. Choose an upgrade plan to unlock your payout, then pay and upload your receipt."}</p>
           {upgradePlans.map((item) => (
             <button key={item.name} onClick={() => { setPlan(item); setNotice(""); }} className={`w-full rounded-[24px] border p-4 text-left backdrop-blur-xl transition ${plan?.name === item.name ? "border-leaf/60 bg-leaf/10" : "border-glass-border bg-glass hover:border-leaf/40"}`}>
               <div className="flex items-start justify-between">
