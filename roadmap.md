@@ -6,3 +6,6 @@
 - [x] Replace placeholder dashboard buttons with usable action panels.
 - [x] Make the real ₦1,000 background notes visibly float.
 - [x] Verify dashboard actions and animation on mobile.
+- [x] Fix login handling for accounts awaiting email confirmation.
+- [x] Add confirmation-email guidance and resend action.
+- [x] Restore confirmed sessions and open the signed-in dashboard.

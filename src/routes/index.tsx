@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
   component: ChixPay,
 });
 
-type Screen = "landing" | "auth" | "state" | "tutorial" | "dashboard";
+type Screen = "landing" | "auth" | "state" | "check-email" | "tutorial" | "dashboard";
 type FormData = { fullName: string; email: string; phone: string; password: string; state: string };
 
 const states = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT Abuja","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
@@ -68,12 +68,51 @@ function ChixPay() {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  useEffect(() => {
+    const openSignedInAccount = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) return;
+      const meta = data.user.user_metadata as Partial<FormData>;
+      setForm((old) => ({
+        ...old,
+        email: data.user.email ?? old.email,
+        fullName: meta.fullName ?? old.fullName ?? "ChixPay member",
+        phone: meta.phone ?? old.phone,
+        state: meta.state ?? old.state ?? "Lagos",
+      }));
+      setScreen("dashboard");
+    };
+
+    void openSignedInAccount();
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event !== "SIGNED_IN" && event !== "USER_UPDATED") || !session?.user) return;
+      const meta = session.user.user_metadata as Partial<FormData>;
+      setForm((old) => ({
+        ...old,
+        email: session.user.email ?? old.email,
+        fullName: meta.fullName ?? old.fullName ?? "ChixPay member",
+        phone: meta.phone ?? old.phone,
+        state: meta.state ?? old.state ?? "Lagos",
+      }));
+      setScreen("dashboard");
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
   const update = (key: keyof FormData, value: string) => setForm((old) => ({ ...old, [key]: value }));
   const login = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setNotice("");
-    const { data, error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
+    const email = form.email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: form.password });
     setBusy(false);
-    if (error) return setNotice(error.message);
+    if (error?.code === "email_not_confirmed") {
+      setForm((old) => ({ ...old, email }));
+      setNotice("Confirm your email before signing in. You can resend the confirmation below.");
+      setScreen("check-email");
+      return;
+    }
+    if (error) return setNotice(error.message === "Invalid login credentials" ? "The email or password is incorrect. Please try again." : error.message);
+    if (!data.user) return setNotice("We could not open your account. Please try again.");
     const meta = data.user.user_metadata as Partial<FormData>;
     setForm((old) => ({ ...old, fullName: meta.fullName ?? "ChixPay member", phone: meta.phone ?? "", state: meta.state ?? "Lagos" }));
     setScreen("dashboard");
@@ -85,10 +124,19 @@ function ChixPay() {
   };
   const finishSignup = async () => {
     setBusy(true); setNotice("");
-    const { data, error } = await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { fullName: form.fullName, phone: form.phone, state: form.state } } });
+    const email = form.email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signUp({ email, password: form.password, options: { emailRedirectTo: window.location.origin, data: { fullName: form.fullName, phone: form.phone, state: form.state } } });
     if (error) { setBusy(false); return setNotice(error.message); }
     if (data.session && data.user) await supabase.from("profiles").upsert({ id: data.user.id, full_name: form.fullName, phone: form.phone, state: form.state });
-    setBusy(false); setScreen("tutorial");
+    setBusy(false);
+    setForm((old) => ({ ...old, email }));
+    setScreen(data.session ? "tutorial" : "check-email");
+  };
+  const resendConfirmation = async () => {
+    setBusy(true); setNotice("");
+    const { error } = await supabase.auth.resend({ type: "signup", email: form.email.trim().toLowerCase(), options: { emailRedirectTo: window.location.origin } });
+    setBusy(false);
+    setNotice(error ? error.message : "A new confirmation link has been sent. Please check your inbox and spam folder.");
   };
   const googleLogin = async () => {
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
@@ -148,6 +196,8 @@ function ChixPay() {
       <label className="mt-7 block text-xs font-semibold text-muted-foreground">State of residence</label><select value={form.state} onChange={(e) => update("state", e.target.value)} className="mt-2 h-13 w-full rounded-2xl border border-glass-border bg-background/60 px-4 text-sm outline-none focus:ring-1 focus:ring-ring"><option value="">Select your state</option>{states.map((state) => <option className="bg-ink" key={state}>{state}</option>)}</select>
       {notice && <p className="mt-3 rounded-xl bg-destructive/15 p-3 text-xs">{notice}</p>}
       <Button disabled={!form.state || busy} variant="reward" size="lg" className="mt-5 w-full" onClick={finishSignup}>{busy ? "Creating account…" : "Create my account"}<ChevronRight/></Button><Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => setScreen("auth")}>Back to my details</Button></div></section>}
+
+    {screen === "check-email" && <section className="auth-enter mx-auto flex min-h-[calc(100vh-80px)] max-w-lg items-center py-8"><div className="w-full rounded-[32px] border border-glass-border bg-glass p-6 text-center shadow-brand backdrop-blur-2xl sm:p-8"><span className="mx-auto grid size-16 place-items-center rounded-[22px] bg-leaf/15 text-leaf"><BadgeCheck className="size-8"/></span><p className="mt-6 text-xs font-semibold text-leaf">ONE LAST STEP</p><h1 className="mt-2 font-display text-3xl font-semibold">Check your email</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">We sent a confirmation link to <strong className="text-foreground">{form.email}</strong>. Open it to activate your account, then return here to sign in.</p>{notice && <p role="status" className="mt-5 rounded-xl border border-glass-border bg-glass-strong p-3 text-xs leading-5 text-foreground">{notice}</p>}<Button disabled={busy} variant="reward" size="lg" className="mt-6 w-full" onClick={resendConfirmation}>{busy ? "Sending…" : "Resend confirmation email"}</Button><Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={() => { setMode("login"); setNotice(""); setScreen("auth"); }}>Back to login</Button></div></section>}
 
     {screen === "tutorial" && <div className="mx-auto max-w-[430px]"><Tutorial onDone={() => setScreen("dashboard")}/></div>}
   </PublicShell>;
