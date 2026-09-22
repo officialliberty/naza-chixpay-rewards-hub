@@ -215,6 +215,33 @@ export type Database = {
         }
         Relationships: []
       }
+      task_completions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          task_day: string
+          task_key: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          task_day?: string
+          task_key: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          task_day?: string
+          task_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       upgrade_requests: {
         Row: {
           amount: number
