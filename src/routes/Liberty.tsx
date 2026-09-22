@@ -44,6 +44,11 @@ function Panel({ children, className = "" }: { children: React.ReactNode; classN
   return <div className={`rounded-[28px] border border-glass-border bg-glass p-5 shadow-brand backdrop-blur-2xl ${className}`}>{children}</div>;
 }
 
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return <span className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-gold px-1.5 py-0.5 text-[10px] font-bold leading-none text-background">{count}</span>;
+}
+
 function StatusPill({ status }: { status: string }) {
   const tone = status === "active" || status === "approved" ? "border-leaf/30 bg-leaf/12 text-leaf"
     : status === "pending" ? "border-gold/30 bg-gold/12 text-gold"
