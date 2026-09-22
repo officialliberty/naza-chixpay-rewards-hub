@@ -118,11 +118,12 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
     if (!user) { setBusy(false); return setNotice("Please sign in again."); }
-    const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited").eq("user_id", user.id).maybeSingle();
+    const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited, expires_at").eq("user_id", user.id).maybeSingle();
     setBusy(false);
-    if (key && (key.unlimited || (key.uses_left ?? 0) > 0)) {
-      setChixId(key.code);
-      onActivated?.(key.code);
+    if (keyIsActive(key)) {
+      setKeyInfo(key as KeyInfo);
+      setChixId(key!.code);
+      onActivated?.(key!.code);
       setStep("approved");
       return;
     }
