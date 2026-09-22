@@ -112,7 +112,7 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "wfee" | "wupgrade" | "wfinal" | "support">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "wfee" | "wupgrade" | "wfinal" | "payout" | "support">("overview");
   const [withdrawPayments, setWithdrawPayments] = useState<WithdrawPayment[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
@@ -124,6 +124,10 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingSupport, setSavingSupport] = useState(false);
+  const [payBank, setPayBank] = useState("");
+  const [payAccountName, setPayAccountName] = useState("");
+  const [payAccountNumber, setPayAccountNumber] = useState("");
+  const [savingPayout, setSavingPayout] = useState(false);
   const [directWithdraw, setDirectWithdraw] = useState(false);
   const [savingDirect, setSavingDirect] = useState(false);
   const [message, setMessage] = useState("");
@@ -138,7 +142,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
-      supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url", "withdraw_direct"]),
+      supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url", "withdraw_direct", "pay_bank_name", "pay_account_name", "pay_account_number"]),
       supabase.rpc("admin_list_balances"),
       supabase.from("withdrawals").select("amount").eq("stage", "completed"),
       supabase.rpc("admin_list_withdrawal_payments", { _kind: null as unknown as string }),
@@ -154,6 +158,9 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       if (setting.key === "support_email") setSupportEmail(setting.value);
       if (setting.key === "support_telegram_url") setTelegramUrl(setting.value);
       if (setting.key === "support_whatsapp_url") setWhatsappUrl(setting.value);
+      if (setting.key === "pay_bank_name") setPayBank(setting.value);
+      if (setting.key === "pay_account_name") setPayAccountName(setting.value);
+      if (setting.key === "pay_account_number") setPayAccountNumber(setting.value);
       if (setting.key === "withdraw_direct") setDirectWithdraw(setting.value === "on");
     }
     if (userRows.error || requestRows.error) setMessage("Some records could not be loaded. Try refreshing.");
@@ -176,6 +183,25 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     if (error) return setMessage("The withdrawal mode could not be saved.");
     setDirectWithdraw(value);
     setMessage(value ? "Direct withdrawal is ON — members withdraw with no extra payments." : "Direct withdrawal is OFF — members pass through all payment steps.");
+  };
+
+  const savePayoutSettings = async () => {
+    const bankValue = payBank.trim();
+    const nameValue = payAccountName.trim();
+    const numberValue = payAccountNumber.trim();
+    if (bankValue.length < 2 || bankValue.length > 120) return setMessage("Enter the bank name.");
+    if (nameValue.length < 2 || nameValue.length > 120) return setMessage("Enter the account name.");
+    if (!/^[0-9]{10,11}$/.test(numberValue)) return setMessage("Enter a valid 10-digit account number.");
+    setSavingPayout(true);
+    const results = await Promise.all([
+      supabase.rpc("admin_set_setting", { _key: "pay_bank_name", _value: bankValue }),
+      supabase.rpc("admin_set_setting", { _key: "pay_account_name", _value: nameValue }),
+      supabase.rpc("admin_set_setting", { _key: "pay_account_number", _value: numberValue }),
+    ]);
+    setSavingPayout(false);
+    setMessage(results.some(({ error }) => error)
+      ? "The payment account could not be saved."
+      : "Payment account updated — every payment page now shows these details.");
   };
 
   const saveSupportSettings = async () => {
@@ -330,6 +356,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Button variant={tab === "wfee" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfee")}>Withdrawal fees</Button>
         <Button variant={tab === "wupgrade" ? "brand" : "glass"} size="sm" onClick={() => setTab("wupgrade")}>Withdrawal upgrades</Button>
         <Button variant={tab === "wfinal" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfinal")}>Final payments</Button>
+        <Button variant={tab === "payout" ? "brand" : "glass"} size="sm" onClick={() => setTab("payout")}>Payment account</Button>
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
 
@@ -357,6 +384,17 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
             <div className="min-w-0"><p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p><p className="truncate font-display text-xl font-semibold">{value}</p></div>
           </Panel>)}
       </section>}
+
+      {tab === "payout" && <Panel className="mt-3">
+        <h2 className="font-display text-lg font-semibold">Payment account details</h2>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">Used everywhere members pay: Chix ID keys, upgrades, withdrawal fees and final payments. Saving here updates all of them at once.</p>
+        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Bank</span><Input maxLength={120} value={payBank} onChange={(event) => setPayBank(event.target.value)} placeholder="Moniepoint MFB" className="h-12 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Account name</span><Input maxLength={120} value={payAccountName} onChange={(event) => setPayAccountName(event.target.value)} placeholder="ChixPay Technologies Ltd" className="h-12 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Account number</span><Input inputMode="numeric" maxLength={11} value={payAccountNumber} onChange={(event) => setPayAccountNumber(event.target.value.replace(/[^0-9]/g, ""))} placeholder="0123456789" className="h-12 rounded-2xl border-glass-border bg-background/45 px-4 tracking-[0.14em]"/></label>
+        </div>
+        <Button disabled={savingPayout} variant="reward" size="lg" className="mt-5" onClick={() => void savePayoutSettings()}><Save/> {savingPayout ? "Saving…" : "Save payment account"}</Button>
+      </Panel>}
 
       {tab === "support" && <Panel className="mt-3">
         <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-leaf/15 text-leaf"><Headphones className="size-5"/></span><div><h2 className="font-display text-lg font-semibold">Member support contacts</h2><p className="text-xs text-muted-foreground">These options appear in every member’s Support menu.</p></div></div>
