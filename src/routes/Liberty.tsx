@@ -106,7 +106,7 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"users" | "upgrades" | "chixids" | "support">("users");
+  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "support">("overview");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [chixRequests, setChixRequests] = useState<ChixRequest[]>([]);
@@ -119,21 +119,25 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [savingSupport, setSavingSupport] = useState(false);
   const [message, setMessage] = useState("");
   const [balances, setBalances] = useState<Record<string, number>>({});
+  const [withdrawalStats, setWithdrawalStats] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
+
 
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, settings, balanceRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
       supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url"]),
       supabase.rpc("admin_list_balances"),
+      supabase.from("withdrawals").select("amount"),
     ]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
     if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
     if (balanceRows.data) setBalances(Object.fromEntries((balanceRows.data as unknown as { user_id: string; balance: number }[]).map((row) => [row.user_id, Number(row.balance)])));
+    if (withdrawalRows.data) setWithdrawalStats({ count: withdrawalRows.data.length, amount: withdrawalRows.data.reduce((sum, row) => sum + Number(row.amount), 0) });
     for (const setting of settings.data ?? []) {
       if (setting.key === "chix_id_code") setChixCode(setting.value);
       if (setting.key === "support_email") setSupportEmail(setting.value);
@@ -186,6 +190,22 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
   const restricted = users.filter((user) => (user.status ?? "active") !== "active").length;
   const pending = requests.filter((request) => request.status === "pending").length;
+  const totalBalance = Object.values(balances).reduce((sum, value) => sum + value, 0);
+  const totalReferrals = users.reduce((sum, user) => sum + user.referral_count, 0);
+  const approvedPayments = requests.filter((r) => r.status === "approved").length + chixRequests.filter((r) => r.status === "approved").length;
+  const rejectedPayments = requests.filter((r) => r.status === "rejected").length + chixRequests.filter((r) => r.status === "rejected").length;
+  const pendingPayments = pending + chixRequests.filter((r) => r.status === "pending").length;
+
+  const stats = [
+    { label: "Total users", value: String(users.length), icon: Users },
+    { label: "Total balance", value: money(totalBalance), icon: Wallet },
+    { label: "Total referrals", value: String(totalReferrals), icon: Send },
+    { label: "Total approved", value: String(approvedPayments), icon: CheckCircle2 },
+    { label: "Total rejected", value: String(rejectedPayments), icon: Ban },
+    { label: "Pending reviews", value: String(pendingPayments), icon: FileText },
+    { label: "Accounts banned", value: String(restricted), icon: ShieldCheck },
+    { label: "Withdrawals", value: `${withdrawalStats.count} · ${money(withdrawalStats.amount)}`, icon: RefreshCw },
+  ];
 
   const setStatus = async (user: AdminUser, status: string) => {
     const reason = status === "active" ? null : window.prompt("Reason for restricting this account?", "Suspicious activity");
@@ -240,19 +260,23 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <div className="flex gap-2"><Button variant="glass" size="sm" onClick={() => void load()}><RefreshCw/> Refresh</Button><Button variant="glass" size="sm" onClick={onSignOut}><LogOut/> Sign out</Button></div>
       </header>
 
-      <section className="mt-5 grid gap-3 sm:grid-cols-3">
-        {[{ label: "Members", value: users.length, icon: Users }, { label: "Restricted", value: restricted, icon: Ban }, { label: "Pending upgrades", value: pending, icon: FileText }].map(({ label, value, icon: Icon }) =>
-          <Panel key={label} className="flex items-center gap-4 p-4"><span className="grid size-11 place-items-center rounded-2xl bg-leaf/15 text-leaf"><Icon className="size-5"/></span><div><p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p><p className="font-display text-2xl font-semibold">{value}</p></div></Panel>)}
-      </section>
-
       {message && <Button variant="glass" className="mt-3 h-auto w-full justify-start whitespace-normal rounded-2xl border-leaf/25 bg-leaf/10 p-3 text-left text-xs text-leaf" onClick={() => setMessage("")}>{message}</Button>}
 
       <div className="mt-5 flex flex-wrap gap-2">
+        <Button variant={tab === "overview" ? "brand" : "glass"} size="sm" onClick={() => setTab("overview")}>Overview</Button>
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
         <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
         <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
+
+      {tab === "overview" && <section className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon }) =>
+          <Panel key={label} className="flex items-center gap-4 p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-leaf/15 text-leaf"><Icon className="size-5"/></span>
+            <div className="min-w-0"><p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p><p className="truncate font-display text-xl font-semibold">{value}</p></div>
+          </Panel>)}
+      </section>}
 
       {tab === "support" && <Panel className="mt-3">
         <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-leaf/15 text-leaf"><Headphones className="size-5"/></span><div><h2 className="font-display text-lg font-semibold">Member support contacts</h2><p className="text-xs text-muted-foreground">These options appear in every member’s Support menu.</p></div></div>
