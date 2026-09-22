@@ -295,7 +295,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
       const id = data.user?.id;
       if (!id || cancelled) return;
       setUserId(id);
-      const [claims, payouts, key, profile, tasks, extras, alerts] = await Promise.all([
+      const [claims, payouts, key, profile, tasks, extras, alerts, invites] = await Promise.all([
         supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false }),
         supabase.from("withdrawals").select("amount").eq("user_id", id).eq("stage", "completed"),
         supabase.from("chix_keys").select("uses_left, unlimited, expires_at, code").eq("user_id", id).maybeSingle(),
@@ -303,6 +303,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
         supabase.from("task_completions").select("amount").eq("user_id", id),
         supabase.from("balance_adjustments").select("amount").eq("user_id", id),
         supabase.from("notifications").select("id, title, body, created_at, read_at").eq("user_id", id).order("created_at", { ascending: false }).limit(30),
+        supabase.from("referrals").select("id, referred_name, amount, created_at").eq("referrer_id", id).order("created_at", { ascending: false }),
       ]);
       if (cancelled) return;
       if (profile.data && (profile.data.status ?? "active") !== "active") { onRestricted(profile.data.restriction_reason ?? null); return; }
@@ -310,6 +311,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
       if (tasks.data) setTaskEarned(tasks.data.reduce((total, row) => total + Number(row.amount), 0));
       if (extras.data) setAdjustments(extras.data.reduce((total, row) => total + Number(row.amount), 0));
       if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
+      if (invites.data) setReferralHistory(invites.data.map((row) => ({ id: row.id, name: row.referred_name, amount: Number(row.amount), at: new Date(row.created_at).getTime() })));
       setChixIdActive(keyIsActive(key.data as KeyInfo | null));
       if (profile.data?.avatar_path) {
         const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(profile.data.avatar_path, 60 * 60 * 24);
