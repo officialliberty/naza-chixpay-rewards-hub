@@ -55,28 +55,30 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
   useEffect(() => {
     if (booted.current) return;
     booted.current = true;
-    let cancelled = false;
     void (async () => {
-      const { data } = await supabase.auth.getUser();
-      const user = data.user;
-      if (cancelled || !user) return;
-      const meta = user.user_metadata as { fullName?: string; full_name?: string } | undefined;
-      setFullName(meta?.fullName ?? meta?.full_name ?? "");
-      const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited, expires_at").eq("user_id", user.id).maybeSingle();
-      if (cancelled) return;
-      if (keyIsActive(key)) {
-        setKeyInfo(key as KeyInfo);
-        setChixId(key!.code);
-        onActivated?.(key!.code);
-        setStep("approved");
-        return;
+      try {
+        const { data } = await supabase.auth.getUser();
+        const user = data.user;
+        if (!user) { setStep("name"); return; }
+        const meta = user.user_metadata as { fullName?: string; full_name?: string } | undefined;
+        setFullName(meta?.fullName ?? meta?.full_name ?? "");
+        const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited, expires_at").eq("user_id", user.id).maybeSingle();
+        if (keyIsActive(key)) {
+          setKeyInfo(key as KeyInfo);
+          setChixId(key!.code);
+          onActivated?.(key!.code);
+          setStep("approved");
+          return;
+        }
+        const { data: pendingRow } = await supabase.from("chix_key_requests").select("status, plan_name").eq("user_id", user.id).eq("status", "pending").limit(1).maybeSingle();
+        setStep(pendingRow ? "pending" : "name");
+      } catch {
+        setStep("name");
       }
-      const { data: pendingRow } = await supabase.from("chix_key_requests").select("status, plan_name").eq("user_id", user.id).eq("status", "pending").maybeSingle();
-      if (cancelled) return;
-      setStep(pendingRow ? "pending" : "name");
     })();
-    return () => { cancelled = true; };
-  }, [onActivated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   useEffect(() => {
     if (step !== "approved" || !keyInfo?.expires_at) return undefined;
