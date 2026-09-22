@@ -57,6 +57,13 @@
       "when": 1790085573885,
       "tag": "0007_validate_admin_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790086585950,
+      "tag": "0008_daily_task_completions",
+      "breakpoints": true
     }
   ]
 }

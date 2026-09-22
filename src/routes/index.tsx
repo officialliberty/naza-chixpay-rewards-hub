@@ -18,6 +18,7 @@ import { ChixIdFlow } from "@/components/chix-id-flow";
 import { WithdrawFlow } from "@/components/withdraw-flow";
 import { ProfilePage } from "@/components/profile-page";
 import { SupportPage } from "@/components/support-page";
+import { TasksPage } from "@/components/tasks-page";
 
 import nairaNote from "@/assets/naira-1000-clean.png";
 
@@ -273,13 +274,14 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
   const [seconds, setSeconds] = useState(0); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [chixIdActive, setChixIdActive] = useState(false);
-  const [view, setView] = useState<"home" | "upgrade" | "referral" | "chixid" | "withdraw" | "profile" | "support">("home");
+  const [view, setView] = useState<"home" | "upgrade" | "referral" | "chixid" | "withdraw" | "profile" | "support" | "tasks">("home");
+  const [taskEarned, setTaskEarned] = useState(0);
   const [claimHistory, setClaimHistory] = useState<ClaimRecord[]>([]);
   const [withdrawn, setWithdrawn] = useState(0);
   const [cashBurst, setCashBurst] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) - withdrawn;
+  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) + taskEarned - withdrawn;
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -287,14 +289,16 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
       const id = data.user?.id;
       if (!id || cancelled) return;
       setUserId(id);
-      const [claims, payouts, key, profile] = await Promise.all([
+      const [claims, payouts, key, profile, tasks] = await Promise.all([
         supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false }),
         supabase.from("withdrawals").select("amount").eq("user_id", id),
         supabase.from("chix_keys").select("uses_left, unlimited").eq("user_id", id).maybeSingle(),
         supabase.from("profiles").select("avatar_path").eq("id", id).maybeSingle(),
+        supabase.from("task_completions").select("amount").eq("user_id", id),
       ]);
       if (cancelled) return;
       if (payouts.data) setWithdrawn(payouts.data.reduce((total, row) => total + Number(row.amount), 0));
+      if (tasks.data) setTaskEarned(tasks.data.reduce((total, row) => total + Number(row.amount), 0));
       if (key.data) setChixIdActive(Boolean(key.data.unlimited) || (key.data.uses_left ?? 0) > 0);
       if (profile.data?.avatar_path) {
         const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(profile.data.avatar_path, 60 * 60 * 24);
@@ -343,6 +347,7 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
     if (label === "Withdraw") return setView("withdraw");
     if (label === "Profile") return setView("profile");
     if (label === "Support") return setView("support");
+    if (label === "Tasks") return setView("tasks");
     setActiveAction(label);
   };
   const completeAction = () => {
@@ -364,6 +369,7 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
   /></Shell>;
   if (view === "profile") return <Shell><ProfilePage fallbackName={name} fallbackState={state} chixIdActive={chixIdActive} onBack={() => setView("home")} onLogout={onLogout} onAvatarChange={setAvatarUrl}/></Shell>;
   if (view === "support") return <Shell><SupportPage onBack={() => setView("home")}/></Shell>;
+  if (view === "tasks") return <Shell><TasksPage onBack={() => setView("home")} onEarned={(amount) => setTaskEarned((total) => total + amount)}/></Shell>;
   return <Shell>
     <CashFall burst={cashBurst}/>
     <header className="flex items-center justify-between"><div className="flex items-center gap-2.5"><Button aria-label="Open profile" variant="ghost" size="icon" className="size-10 rounded-full p-0" onClick={() => openAction("Profile")}><Avatar className="size-10 border border-glass-border bg-glass"><AvatarImage src={avatarUrl ?? undefined} alt={`${name}'s profile`} className="object-cover"/><AvatarFallback className="bg-glass font-display text-sm font-semibold text-gold">{name.charAt(0).toUpperCase()}</AvatarFallback></Avatar></Button><Button variant="ghost" className="h-auto flex-col items-start gap-0 rounded-xl px-1 py-1 text-left" onClick={() => openAction("Profile")}><span className="font-display text-sm font-semibold">{name}</span><span className="text-[11px] font-normal text-muted-foreground">{state} State · View profile</span></Button></div><Button aria-label="Notifications" variant="glass" size="icon" className="rounded-full" onClick={() => openAction("Notifications")}><Bell/></Button></header>
