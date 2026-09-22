@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { ChixLoader } from "@/components/chix-loader";
+import { usePaymentDetails } from "@/lib/payment-details";
 
 export type UpgradePlan = { name: string; amount: number; tag: string; perks: string[] };
 
@@ -16,7 +17,6 @@ export const upgradePlans: UpgradePlan[] = [
   { name: "Diamond", amount: 100000, tag: "Maximum", perks: ["Unlimited withdrawal review", "Highest referral tier"] },
 ];
 
-export const payment = { bank: "ChixPay Collections (Demo)", accountName: "ChixPay Technologies Ltd", accountNumber: "0000000000" };
 
 type Step = "select" | "loading" | "confirm" | "loading2" | "payment" | "pending";
 
@@ -29,6 +29,7 @@ export function UpgradeFlow({ onBack }: { onBack: () => void }) {
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const payment = usePaymentDetails();
 
   useEffect(() => {
     if (step === "loading") {

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { ChixLoader } from "@/components/chix-loader";
+import { usePaymentDetails } from "@/lib/payment-details";
 
 export type KeyPlan = { name: string; amount: number; uses: number | null; note: string };
 
@@ -34,12 +35,12 @@ const countdown = (iso: string) => {
   return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
 };
 
-const payment = { bank: "ChixPay Collections (Demo)", accountName: "ChixPay Technologies Ltd", accountNumber: "0000000000" };
 
 type Step = "boot" | "name" | "select" | "loading" | "payment" | "pending" | "approved";
 
 export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActivated?: (code: string) => void }) {
   const [step, setStep] = useState<Step>("boot");
+  const payment = usePaymentDetails();
   const [plan, setPlan] = useState<KeyPlan | null>(null);
   const [fullName, setFullName] = useState("");
   const [file, setFile] = useState<File | null>(null);

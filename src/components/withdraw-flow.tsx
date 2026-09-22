@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { ChixLoader } from "@/components/chix-loader";
-import { payment, upgradePlans, type UpgradePlan } from "@/components/upgrade-flow";
+import { upgradePlans, type UpgradePlan } from "@/components/upgrade-flow";
+import { usePaymentDetails } from "@/lib/payment-details";
 
 export const nigerianBanks = [
   "Access Bank", "Citibank Nigeria", "Ecobank Nigeria", "Fidelity Bank", "First Bank of Nigeria",
