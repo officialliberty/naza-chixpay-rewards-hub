@@ -44,6 +44,11 @@ function Panel({ children, className = "" }: { children: React.ReactNode; classN
   return <div className={`rounded-[28px] border border-glass-border bg-glass p-5 shadow-brand backdrop-blur-2xl ${className}`}>{children}</div>;
 }
 
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return <span className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-gold px-1.5 py-0.5 text-[10px] font-bold leading-none text-background">{count}</span>;
+}
+
 function StatusPill({ status }: { status: string }) {
   const tone = status === "active" || status === "approved" ? "border-leaf/30 bg-leaf/12 text-leaf"
     : status === "pending" ? "border-gold/30 bg-gold/12 text-gold"
@@ -276,6 +281,10 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
   const restricted = users.filter((user) => (user.status ?? "active") !== "active").length;
   const pending = requests.filter((request) => request.status === "pending").length;
+  const pendingChix = chixRequests.filter((request) => request.status === "pending").length;
+  const pendingFee = withdrawPayments.filter((row) => row.kind === "fee" && row.status === "pending").length;
+  const pendingWUpgrade = withdrawPayments.filter((row) => row.kind === "upgrade" && row.status === "pending").length;
+  const pendingFinal = withdrawPayments.filter((row) => row.kind === "final" && row.status === "pending").length;
   const totalBalance = Object.values(balances).reduce((sum, value) => sum + value, 0);
   const totalReferrals = users.reduce((sum, user) => sum + user.referral_count, 0);
   const approvedPayments = requests.filter((r) => r.status === "approved").length + chixRequests.filter((r) => r.status === "approved").length;
@@ -351,11 +360,11 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       <div className="mt-5 flex flex-wrap gap-2">
         <Button variant={tab === "overview" ? "brand" : "glass"} size="sm" onClick={() => setTab("overview")}>Overview</Button>
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
-        <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
-        <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
-        <Button variant={tab === "wfee" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfee")}>Withdrawal fees</Button>
-        <Button variant={tab === "wupgrade" ? "brand" : "glass"} size="sm" onClick={() => setTab("wupgrade")}>Withdrawal upgrades</Button>
-        <Button variant={tab === "wfinal" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfinal")}>Final payments</Button>
+        <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews<CountBadge count={pending}/></Button>
+        <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews<CountBadge count={pendingChix}/></Button>
+        <Button variant={tab === "wfee" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfee")}>Withdrawal fees<CountBadge count={pendingFee}/></Button>
+        <Button variant={tab === "wupgrade" ? "brand" : "glass"} size="sm" onClick={() => setTab("wupgrade")}>Withdrawal upgrades<CountBadge count={pendingWUpgrade}/></Button>
+        <Button variant={tab === "wfinal" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfinal")}>Final payments<CountBadge count={pendingFinal}/></Button>
         <Button variant={tab === "payout" ? "brand" : "glass"} size="sm" onClick={() => setTab("payout")}>Payment account</Button>
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
