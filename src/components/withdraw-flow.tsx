@@ -276,6 +276,8 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
           <Button variant="ghost" className="mt-2 w-full text-muted-foreground" onClick={onBack}>Back to wallet</Button>
         </div>}
 
+        {rejectedNotice}
+
         {!pending && stage === "fee" && paymentCard(
           "Pay the withdrawal fee to",
           "New ChixPay policy: every withdrawal is cleared with a one-time withdrawal fee of ₦7,600. Pay to the same account below and upload your receipt for approval.",
