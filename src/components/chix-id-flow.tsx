@@ -8,13 +8,31 @@ import { ChixLoader } from "@/components/chix-loader";
 export type KeyPlan = { name: string; amount: number; uses: number | null; note: string };
 
 export const keyPlans: KeyPlan[] = [
-  { name: "Basic Key", amount: 6200, uses: 1, note: "Valid for 1 withdrawal" },
-  { name: "Standard Key", amount: 9400, uses: 2, note: "Valid for 2 withdrawals" },
-  { name: "Premium Key", amount: 14900, uses: 3, note: "Valid for 3 withdrawals" },
-  { name: "Gold Key", amount: 25600, uses: 4, note: "Valid for 4 withdrawals" },
-  { name: "Platinum Key", amount: 35900, uses: 5, note: "Valid for 5 withdrawals" },
-  { name: "Diamond Key", amount: 42800, uses: null, note: "Valid for unlimited withdrawals" },
+  { name: "Basic Key", amount: 6200, uses: 1, note: "1 withdrawal · valid 24 hours (1 day)" },
+  { name: "Standard Key", amount: 9400, uses: 2, note: "2 withdrawals · valid 48 hours (2 days)" },
+  { name: "Premium Key", amount: 14900, uses: 3, note: "3 withdrawals · valid 72 hours (3 days)" },
+  { name: "Gold Key", amount: 25600, uses: 4, note: "4 withdrawals · valid 96 hours (4 days)" },
+  { name: "Platinum Key", amount: 35900, uses: 5, note: "5 withdrawals · valid 120 hours (5 days)" },
+  { name: "Diamond Key", amount: 42800, uses: null, note: "Unlimited withdrawals · never expires" },
 ];
+
+export type KeyInfo = { code: string; uses_left: number | null; unlimited: boolean; expires_at: string | null };
+
+export const keyIsActive = (key: KeyInfo | null | undefined) => {
+  if (!key) return false;
+  if (key.unlimited) return true;
+  if ((key.uses_left ?? 0) <= 0) return false;
+  return !key.expires_at || new Date(key.expires_at).getTime() > Date.now();
+};
+
+const countdown = (iso: string) => {
+  const left = new Date(iso).getTime() - Date.now();
+  if (left <= 0) return "Expired";
+  const hours = Math.floor(left / 3600000);
+  const minutes = Math.floor((left % 3600000) / 60000);
+  const seconds = Math.floor((left % 60000) / 1000);
+  return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+};
 
 const payment = { bank: "ChixPay Collections (Demo)", accountName: "ChixPay Technologies Ltd", accountNumber: "0000000000" };
 
