@@ -76,7 +76,7 @@ function ChixPay() {
     const openSignedInAccount = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) return;
-      const meta = data.user.user_metadata ?? {}) as Partial<FormData>;
+      const meta = ((data.user.user_metadata ?? {}) as Partial<FormData>);
       setForm((old) => ({
         ...old,
         email: data.user.email ?? old.email,
@@ -93,7 +93,7 @@ function ChixPay() {
     void openSignedInAccount();
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event !== "SIGNED_IN" && event !== "USER_UPDATED") || !session?.user) return;
-      const meta = session.user.user_metadata ?? {}) as Partial<FormData>;
+      const meta = ((session.user.user_metadata ?? {}) as Partial<FormData>);
       setForm((old) => ({
         ...old,
         email: session.user.email ?? old.email,
@@ -114,7 +114,7 @@ function ChixPay() {
     setBusy(false);
     if (error) return setNotice(error.message === "Invalid login credentials" ? "The email or password is incorrect. Please try again." : error.message);
     if (!data.user) return setNotice("We could not open your account. Please try again.");
-    const meta = data.user.user_metadata ?? {}) as Partial<FormData>;
+    const meta = ((data.user.user_metadata ?? {}) as Partial<FormData>);
     setForm((old) => ({ ...old, fullName: meta.fullName ?? "ChixPay member", phone: meta.phone ?? "", state: meta.state ?? "Lagos" }));
     setScreen("dashboard");
   };
