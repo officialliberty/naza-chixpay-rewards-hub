@@ -328,11 +328,13 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
   useEffect(() => {
     if (!userId) return;
     const check = async () => {
-      const [profile, alerts] = await Promise.all([
+      const [profile, alerts, invites] = await Promise.all([
         supabase.from("profiles").select("status, restriction_reason").eq("id", userId).maybeSingle(),
         supabase.from("notifications").select("id, title, body, created_at, read_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(30),
+        supabase.from("referrals").select("id, referred_name, amount, created_at").eq("referrer_id", userId).order("created_at", { ascending: false }),
       ]);
       if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
+      if (invites.data) setReferralHistory(invites.data.map((row) => ({ id: row.id, name: row.referred_name, amount: Number(row.amount), at: new Date(row.created_at).getTime() })));
       if (profile.data && (profile.data.status ?? "active") !== "active") onRestricted(profile.data.restriction_reason ?? null);
     };
     const timer = window.setInterval(() => void check(), 30000);
