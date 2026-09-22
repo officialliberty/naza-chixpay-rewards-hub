@@ -527,8 +527,8 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       {tab === "upgrades" && <Panel className="mt-3">
         <div className="space-y-3">
           {loading && <p className="text-sm text-muted-foreground">Loading requests…</p>}
-          {!loading && requests.length === 0 && <p className="text-sm text-muted-foreground">No upgrade requests yet.</p>}
-          {requests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+          {!loading && openUpgrades.length === 0 && <p className="text-sm text-muted-foreground">No upgrade payments waiting for review.</p>}
+          {openUpgrades.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
