@@ -13,6 +13,8 @@ import { lovable } from "@/integrations/lovable";
 import logoMark from "@/assets/chixpay-logo.png";
 import { UpgradeFlow } from "@/components/upgrade-flow";
 import { ReferralPanel } from "@/components/referral-panel";
+import { ChixIdFlow } from "@/components/chix-id-flow";
+import { WithdrawFlow } from "@/components/withdraw-flow";
 
 import nairaNote from "@/assets/naira-1000-clean.png";
 
