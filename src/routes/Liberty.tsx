@@ -315,15 +315,18 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
                 <StatusPill status={status}/>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="rounded-full bg-leaf/15 px-2.5 py-1 font-semibold text-leaf">Balance {money(balances[user.id] ?? 0)}</span>
                 <span className="rounded-full bg-glass-strong px-2.5 py-1">{user.referral_count} referrals</span>
                 <span className="rounded-full bg-glass-strong px-2.5 py-1">{user.upgrade_count} upgrades</span>
                 {user.pending_upgrades > 0 && <span className="rounded-full bg-gold/15 px-2.5 py-1 text-gold">{user.pending_upgrades} pending</span>}
                 {user.referral_code && <span className="rounded-full bg-glass-strong px-2.5 py-1 tracking-[0.12em]">{user.referral_code}</span>}
               </div>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {status === "active"
-                  ? <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setStatus(user, "restricted")}><Ban/> Restrict account</Button>
+                  ? <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setStatus(user, "restricted")}><Ban/> Ban account</Button>
                   : <Button variant="glass" size="sm" onClick={() => void setStatus(user, "active")}><CheckCircle2/> Restore access</Button>}
+                <Button variant="glass" size="sm" onClick={() => void adjustBalance(user)}><Wallet/> Edit balance</Button>
+                <Button variant="glass" size="sm" onClick={() => void sendMessage(user)}><Send/> Send message</Button>
               </div>
             </div>;
           })}
