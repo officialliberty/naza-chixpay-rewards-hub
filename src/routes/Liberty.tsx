@@ -270,6 +270,14 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
 
+      {tab === "overview" && <section className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ label, value, icon: Icon }) =>
+          <Panel key={label} className="flex items-center gap-4 p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-leaf/15 text-leaf"><Icon className="size-5"/></span>
+            <div className="min-w-0"><p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p><p className="truncate font-display text-xl font-semibold">{value}</p></div>
+          </Panel>)}
+      </section>}
+
       {tab === "support" && <Panel className="mt-3">
         <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-leaf/15 text-leaf"><Headphones className="size-5"/></span><div><h2 className="font-display text-lg font-semibold">Member support contacts</h2><p className="text-xs text-muted-foreground">These options appear in every member’s Support menu.</p></div></div>
         <div className="mt-5 grid gap-4 lg:grid-cols-3">
