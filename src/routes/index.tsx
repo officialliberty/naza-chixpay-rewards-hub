@@ -19,6 +19,7 @@ import { ProfilePage } from "@/components/profile-page";
 import { SupportPage } from "@/components/support-page";
 import { TasksPage } from "@/components/tasks-page";
 import { RestrictedScreen } from "@/components/restricted-screen";
+import { AlertOverlay } from "@/components/alert-overlay";
 
 import nairaNote from "@/assets/naira-1000-clean.png";
 
