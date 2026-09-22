@@ -116,6 +116,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [whatsappUrl, setWhatsappUrl] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingSupport, setSavingSupport] = useState(false);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
@@ -155,13 +156,13 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue) || emailValue.length > 255) return setMessage("Enter a valid support email address.");
     if (!/^https:\/\/(t\.me|telegram\.me)\/[A-Za-z0-9_+/?=&.-]+$/i.test(telegramValue) || telegramValue.length > 500) return setMessage("Enter a valid secure Telegram link.");
     if (!/^https:\/\/(chat\.whatsapp\.com|whatsapp\.com\/channel)\/[A-Za-z0-9_+/?=&.-]+$/i.test(whatsappValue) || whatsappValue.length > 500) return setMessage("Enter a valid private WhatsApp channel link.");
-    setBusy(true);
+    setSavingSupport(true);
     const results = await Promise.all([
       supabase.rpc("admin_set_setting", { _key: "support_email", _value: emailValue }),
       supabase.rpc("admin_set_setting", { _key: "support_telegram_url", _value: telegramValue }),
       supabase.rpc("admin_set_setting", { _key: "support_whatsapp_url", _value: whatsappValue }),
     ]);
-    setBusy(false);
+    setSavingSupport(false);
     setMessage(results.some(({ error }) => error) ? "The support contacts could not be saved." : "Support contacts updated for all members.");
   };
 
@@ -221,7 +222,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
       {message && <Button variant="glass" className="mt-3 h-auto w-full justify-start whitespace-normal rounded-2xl border-leaf/25 bg-leaf/10 p-3 text-left text-xs text-leaf" onClick={() => setMessage("")}>{message}</Button>}
 
-      <div className="mt-5 flex gap-2">
+      <div className="mt-5 flex flex-wrap gap-2">
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
         <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
         <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
@@ -235,7 +236,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
           <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Telegram support link</span><Input type="url" maxLength={500} value={telegramUrl} onChange={(event) => setTelegramUrl(event.target.value)} placeholder="https://t.me/chixpaysupport" className="h-12 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
           <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Private WhatsApp channel link</span><Input type="url" maxLength={500} value={whatsappUrl} onChange={(event) => setWhatsappUrl(event.target.value)} placeholder="https://whatsapp.com/channel/..." className="h-12 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
         </div>
-        <Button disabled={busy} variant="reward" size="lg" className="mt-5" onClick={() => void saveSupportSettings()}><Save/> {busy ? "Saving…" : "Save support contacts"}</Button>
+        <Button disabled={savingSupport} variant="reward" size="lg" className="mt-5" onClick={() => void saveSupportSettings()}><Save/> {savingSupport ? "Saving…" : "Save support contacts"}</Button>
       </Panel>}
 
       {tab === "chixids" && <>
