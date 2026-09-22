@@ -125,7 +125,9 @@ function Tutorial({ onDone }: { onDone: () => void }) {
     { icon: Trophy, tag: "Grow earnings", title: "Complete & earn", text: "Finish tasks, watch videos, broadcast updates, and invite friends for more rewards." },
     { icon: IdCard, tag: "Ready to cash out", title: "Get your Chix ID", text: "Buy and activate your Chix ID before making your first withdrawal." },
   ];
-  const item = slides[step]; const Icon = item.icon;
+  const item = slides[step] ?? slides[0];
+  if (!item) return null;
+  const Icon = item.icon;
   return <section className="flex min-h-[calc(100vh-88px)] flex-col justify-center pb-8"><div className="rounded-[30px] border border-glass-border bg-glass-strong p-6 backdrop-blur-2xl"><div className="grid size-16 place-items-center rounded-[22px] bg-leaf/15 text-leaf"><Icon className="size-8"/></div><p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-leaf">{item.tag}</p><h1 className="mt-2 font-display text-3xl font-semibold">{item.title}</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">{item.text}</p><div className="mt-8 flex gap-2">{slides.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? "w-8 bg-gold" : "w-2 bg-glass-strong"}`}/>)}</div></div><Button variant="reward" size="lg" className="mt-5 w-full" onClick={() => step === slides.length - 1 ? onDone() : setStep(step + 1)}>{step === slides.length - 1 ? "Open my wallet" : "Next"}<ChevronRight/></Button><button className="mt-5 text-xs text-muted-foreground" onClick={onDone}>Skip tutorial</button></section>;
 }
 
