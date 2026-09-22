@@ -257,14 +257,35 @@ const actionCopy: Record<string, { title: string; description: string; button: s
   Notifications: { title: "Notifications", description: "You’re all caught up. New reward and account updates will appear here.", button: "Done" },
 };
 
+const WELCOME_BONUS = 170000;
+const CLAIM_AMOUNT = 35000;
+const CLAIM_COOLDOWN = 10 * 60 * 1000;
+
 function Dashboard({ name, state }: { name: string; state: string }) {
   const [nextClaimAt, setNextClaimAt] = useState(() => Date.now());
-  const [seconds, setSeconds] = useState(0); const [balance, setBalance] = useState(170000); const [message, setMessage] = useState("");
+  const [seconds, setSeconds] = useState(0); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [chixIdActive, setChixIdActive] = useState(false);
   const [view, setView] = useState<"home" | "upgrade" | "referral">("home");
   const [claimHistory, setClaimHistory] = useState<ClaimRecord[]>([]);
   const [cashBurst, setCashBurst] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      const id = data.user?.id;
+      if (!id || cancelled) return;
+      setUserId(id);
+      const { data: rows } = await supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false });
+      if (cancelled || !rows) return;
+      setClaimHistory(rows.map((row) => ({ id: new Date(row.created_at).getTime(), claimedAt: new Date(row.created_at).getTime(), amount: Number(row.amount) })));
+      const latest = rows[0];
+      if (latest) setNextClaimAt(new Date(latest.created_at).getTime() + CLAIM_COOLDOWN);
+    })();
+    return () => { cancelled = true; };
+  }, []);
   useEffect(() => {
     const updateCountdown = () => setSeconds(Math.max(0, Math.ceil((nextClaimAt - Date.now()) / 1000)));
     updateCountdown();
@@ -278,14 +299,20 @@ function Dashboard({ name, state }: { name: string; state: string }) {
   }, [cashBurst]);
   const clock = useMemo(() => `${String(Math.floor(seconds / 60)).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`, [seconds]);
   const claimReady = seconds === 0;
-  const claimReward = () => {
+  const claimReward = async () => {
     if (!claimReady) return;
     const claimedAt = Date.now();
-    setBalance((current) => current + 35000);
-    setClaimHistory((current) => [{ id: claimedAt, claimedAt, amount: 35000 }, ...current]);
-    setNextClaimAt(claimedAt + 10 * 60 * 1000);
+    setClaimHistory((current) => [{ id: claimedAt, claimedAt, amount: CLAIM_AMOUNT }, ...current]);
+    setNextClaimAt(claimedAt + CLAIM_COOLDOWN);
     setCashBurst(claimedAt);
     setMessage("₦35,000 claimed. Your next reward unlocks in 10 minutes.");
+    if (!userId) return;
+    const { error } = await supabase.from("reward_claims").insert({ user_id: userId, amount: CLAIM_AMOUNT });
+    if (error) {
+      setClaimHistory((current) => current.filter((entry) => entry.id !== claimedAt));
+      setNextClaimAt(Date.now());
+      setMessage("We couldn’t save that claim. Please try again.");
+    }
   };
   const openAction = (label: string) => {
     if (label === "Upgrade") return setView("upgrade");
