@@ -39,6 +39,7 @@ export function UpgradeFlow({ onBack }: { onBack: () => void }) {
       const timer = window.setTimeout(() => setStep("payment"), 2200);
       return () => window.clearTimeout(timer);
     }
+    return undefined;
   }, [step]);
 
   useEffect(() => {
