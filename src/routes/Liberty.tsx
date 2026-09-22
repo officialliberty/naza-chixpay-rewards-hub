@@ -29,6 +29,7 @@ type AdminRequest = {
   id: string; user_id: string; email: string | null; full_name: string | null; plan_name: string;
   amount: number; receipt_path: string | null; status: string; created_at: string;
 };
+type ChixRequest = AdminRequest & { uses_total: number | null; chix_id: string | null };
 
 const money = (value: number) => `₦${Number(value).toLocaleString()}`;
 const when = (value: string | null) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }) : "Never";
