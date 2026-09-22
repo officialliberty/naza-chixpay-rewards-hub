@@ -159,7 +159,7 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
       </div>}
 
       {step === "select" && <div className="auth-enter mt-5 space-y-3">
-        <p className="text-xs leading-5 text-muted-foreground">Choose a plan that fits your usage. Each key unlocks a set number of withdrawals, then locks.</p>
+        <p className="text-xs leading-5 text-muted-foreground">Choose a plan that fits your usage. Each key unlocks a set number of withdrawals and stays valid for one day per withdrawal — when the time runs out you buy a new key. The Diamond Key never expires.</p>
         {keyPlans.map((item) => (
           <button key={item.name} onClick={() => choosePlan(item)} className="w-full rounded-[24px] border border-glass-border bg-glass p-4 text-left backdrop-blur-xl transition hover:border-leaf/40">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">{item.name}</p>
