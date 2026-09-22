@@ -50,6 +50,13 @@
       "when": 1790085214824,
       "tag": "0006_profile_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790085573885,
+      "tag": "0007_validate_admin_app_settings",
+      "breakpoints": true
     }
   ]
 }
