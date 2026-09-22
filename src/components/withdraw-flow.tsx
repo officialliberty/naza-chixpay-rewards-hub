@@ -100,7 +100,7 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
     });
     setBusy(false);
     if (error) return setNotice("We could not process that withdrawal. Please try again.");
-    const result = data as { ok?: boolean; reason?: string } | null;
+    const result = data as { ok?: boolean; reason?: string; stage?: string } | null;
     if (!result?.ok) {
       const reason = result?.reason;
       if (reason === "no_key") return onNeedKey("You need to buy a Chix ID key before you can withdraw.");
@@ -108,6 +108,12 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
       if (reason === "expired") return onNeedKey("Your Chix ID has expired — its validity days are complete. Buy a new key to withdraw.");
       if (reason === "wrong_code") return onNeedKey("That Chix ID is not correct. Buy or activate your Chix ID to withdraw.");
       return setNotice("That withdrawal could not be completed.");
+    }
+    if (result.stage === "completed") {
+      setActive(null); setPayments([]);
+      onSuccess(value);
+      setStep("loading");
+      return;
     }
     await refresh();
     setStep("loading");
