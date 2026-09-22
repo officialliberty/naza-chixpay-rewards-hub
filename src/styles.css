@@ -179,12 +179,28 @@
   0% { transform: translateX(-140%); }
   60%, 100% { transform: translateX(240%); }
 }
+@keyframes landing-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes auth-enter {
+  from { opacity: 0; transform: translateY(10px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 @utility note-float { animation: note-float 9s ease-in-out infinite; }
 @utility note-float-two { animation: note-float-two 12s ease-in-out infinite; }
 @utility glow-breathe { animation: glow-breathe 3.5s ease-in-out infinite; }
 @utility glass-sheen { animation: sheen 5s ease-in-out infinite; }
+@utility landing-enter { animation: landing-enter .65s cubic-bezier(.22,1,.36,1) both; }
+@utility auth-enter { animation: auth-enter .45s cubic-bezier(.22,1,.36,1) both; }
+
+.public-aura {
+  background:
+    radial-gradient(circle at 15% 10%, color-mix(in oklab, var(--leaf) 18%, transparent), transparent 34%),
+    radial-gradient(circle at 85% 30%, color-mix(in oklab, var(--brand) 16%, transparent), transparent 36%);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .note-float, .note-float-two, .glow-breathe, .glass-sheen { animation: none; }
+  .note-float, .note-float-two, .glow-breathe, .glass-sheen, .landing-enter, .auth-enter { animation: none; }
 }
