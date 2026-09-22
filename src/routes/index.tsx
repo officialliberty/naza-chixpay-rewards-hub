@@ -316,7 +316,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
       if (tasks.data) setTaskEarned(tasks.data.reduce((total, row) => total + Number(row.amount), 0));
       if (extras.data) setAdjustments(extras.data.reduce((total, row) => total + Number(row.amount), 0));
       if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
-      if (key.data) setChixIdActive(Boolean(key.data.unlimited) || (key.data.uses_left ?? 0) > 0);
+      setChixIdActive(keyIsActive(key.data as KeyInfo | null));
       if (profile.data?.avatar_path) {
         const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(profile.data.avatar_path, 60 * 60 * 24);
         if (signed?.signedUrl) setAvatarUrl(signed.signedUrl);
