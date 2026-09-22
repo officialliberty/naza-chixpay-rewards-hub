@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -22,7 +37,10 @@ export type Database = {
           phone: string
           referral_code: string | null
           referred_by: string | null
+          restricted_at: string | null
+          restriction_reason: string | null
           state: string
+          status: string
           updated_at: string
         }
         Insert: {
@@ -32,7 +50,10 @@ export type Database = {
           phone: string
           referral_code?: string | null
           referred_by?: string | null
+          restricted_at?: string | null
+          restriction_reason?: string | null
           state: string
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -42,7 +63,10 @@ export type Database = {
           phone?: string
           referral_code?: string | null
           referred_by?: string | null
+          restricted_at?: string | null
+          restriction_reason?: string | null
           state?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -104,15 +128,84 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_list_upgrade_requests: {
+        Args: never
+        Returns: {
+          amount: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          plan_name: string
+          receipt_path: string
+          status: string
+          user_id: string
+        }[]
+      }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+          pending_upgrades: number
+          phone: string
+          referral_code: string
+          referral_count: number
+          restriction_reason: string
+          state: string
+          status: string
+          upgrade_count: number
+        }[]
+      }
+      admin_set_account_status: {
+        Args: { _reason?: string; _status: string; _user_id: string }
+        Returns: boolean
+      }
+      admin_set_upgrade_status: {
+        Args: { _request_id: string; _status: string }
+        Returns: boolean
+      }
+      claim_admin: { Args: never; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       redeem_referral: { Args: { _code: string; _name: string }; Returns: Json }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -239,6 +332,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
