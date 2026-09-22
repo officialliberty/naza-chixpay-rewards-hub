@@ -35,6 +35,7 @@ type Props = {
 
 export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultName }: Props) {
   const [step, setStep] = useState<Step>("details");
+  const payment = usePaymentDetails();
   const [booting, setBooting] = useState(true);
   const [fullName, setFullName] = useState(defaultName);
   const [bank, setBank] = useState("");
