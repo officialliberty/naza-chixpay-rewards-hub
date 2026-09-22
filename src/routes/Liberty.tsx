@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { Ban, CheckCircle2, Eye, FileText, Headphones, LogOut, RefreshCw, Save, Search, Send, ShieldCheck, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import logoMark from "@/assets/chixpay-logo.png";
 
@@ -123,6 +124,8 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingSupport, setSavingSupport] = useState(false);
+  const [directWithdraw, setDirectWithdraw] = useState(false);
+  const [savingDirect, setSavingDirect] = useState(false);
   const [message, setMessage] = useState("");
   const [balances, setBalances] = useState<Record<string, number>>({});
   const [withdrawalStats, setWithdrawalStats] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
@@ -320,7 +323,20 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
 
-      {tab === "wfee" && policyPanel("fee", "No withdrawal fee payments yet.")}
+      {tab === "wfee" && <>
+        <Panel className="mt-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-display text-lg font-semibold">Direct withdrawal</h2>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{directWithdraw
+                ? "ON — members withdraw instantly with no withdrawal fee, upgrade or final payment."
+                : "OFF — members must pass the withdrawal fee, upgrade and final payment steps."}</p>
+            </div>
+            <Switch checked={directWithdraw} disabled={savingDirect} onCheckedChange={(value) => void saveDirectWithdraw(value)} aria-label="Direct withdrawal"/>
+          </div>
+        </Panel>
+        {policyPanel("fee", "No withdrawal fee payments yet.")}
+      </>}
       {tab === "wupgrade" && policyPanel("upgrade", "No withdrawal upgrade payments yet.")}
       {tab === "wfinal" && policyPanel("final", "No final payments yet.")}
 
