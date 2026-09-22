@@ -30,6 +30,11 @@ type AdminRequest = {
   amount: number; receipt_path: string | null; status: string; created_at: string;
 };
 type ChixRequest = AdminRequest & { uses_total: number | null; chix_id: string | null };
+type WithdrawPayment = {
+  id: string; withdrawal_id: string; user_id: string; email: string | null; full_name: string | null;
+  kind: string; plan_name: string | null; amount: number; receipt_path: string | null; status: string;
+  created_at: string; withdraw_amount: number; bank_name: string; account_number: string; stage: string;
+};
 
 const money = (value: number) => `₦${Number(value).toLocaleString()}`;
 const when = (value: string | null) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }) : "Never";
