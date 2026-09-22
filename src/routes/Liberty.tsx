@@ -131,14 +131,16 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows, policyRows] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
       supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url"]),
       supabase.rpc("admin_list_balances"),
-      supabase.from("withdrawals").select("amount"),
+      supabase.from("withdrawals").select("amount").eq("stage", "completed"),
+      supabase.rpc("admin_list_withdrawal_payments", { _kind: null as unknown as string }),
     ]);
+    if (policyRows.data) setWithdrawPayments(policyRows.data as unknown as WithdrawPayment[]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
     if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
