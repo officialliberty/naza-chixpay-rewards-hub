@@ -22,7 +22,17 @@ export function ReferralPanel({ onBack }: { onBack: () => void }) {
         supabase.from("profiles").select("referral_code").eq("id", user.id).maybeSingle(),
         supabase.from("referrals").select("id, referred_name, amount, created_at").eq("referrer_id", user.id).order("created_at", { ascending: false }),
       ]);
-      setCode(profile?.referral_code ?? "");
+      let referralCode = profile?.referral_code ?? "";
+      if (!referralCode) {
+        const meta = (user.user_metadata ?? {}) as { fullName?: string; phone?: string; state?: string };
+        const { data: ensured } = await supabase.rpc("ensure_profile", {
+          _full_name: meta.fullName ?? null,
+          _phone: meta.phone ?? null,
+          _state: meta.state ?? null,
+        });
+        referralCode = (ensured as string | null) ?? "";
+      }
+      setCode(referralCode);
       setList((referrals ?? []).map((row) => ({ ...row, amount: Number(row.amount) })));
       setLoading(false);
     };
