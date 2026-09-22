@@ -18,11 +18,12 @@ export const upgradePlans: UpgradePlan[] = [
 
 const payment = { bank: "ChixPay Collections (Demo)", accountName: "ChixPay Technologies Ltd", accountNumber: "0000000000" };
 
-type Step = "select" | "loading" | "payment" | "pending";
+type Step = "select" | "loading" | "confirm" | "loading2" | "payment" | "pending";
 
 export function UpgradeFlow({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState<Step>("select");
   const [plan, setPlan] = useState<UpgradePlan | null>(null);
+  const [confirmName, setConfirmName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -30,12 +31,30 @@ export function UpgradeFlow({ onBack }: { onBack: () => void }) {
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (step !== "loading") return;
-    const timer = window.setTimeout(() => setStep("payment"), 2200);
-    return () => window.clearTimeout(timer);
+    if (step === "loading") {
+      const timer = window.setTimeout(() => setStep("confirm"), 2200);
+      return () => window.clearTimeout(timer);
+    }
+    if (step === "loading2") {
+      const timer = window.setTimeout(() => setStep("payment"), 2200);
+      return () => window.clearTimeout(timer);
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== "confirm") return;
+    void supabase.auth.getUser().then(({ data }) => {
+      const meta = data.user?.user_metadata as { fullName?: string; full_name?: string } | undefined;
+      setConfirmName(meta?.fullName ?? meta?.full_name ?? "");
+    });
   }, [step]);
 
   const choosePlan = (selected: UpgradePlan) => { setPlan(selected); setNotice(""); setStep("loading"); };
+
+  const confirmIdentity = () => {
+    if (confirmName.trim().split(/\s+/).length < 2) return setNotice("Enter your full name exactly as it appears on your bank transfer.");
+    setNotice(""); setStep("loading2");
+  };
 
   const submitReceipt = async () => {
     if (!plan) return;
