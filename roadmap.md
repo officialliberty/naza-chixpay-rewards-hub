@@ -3,3 +3,6 @@
 - [x] Redesign registration and login as polished, realistic account flows.
 - [x] Preserve the existing blue, green, and yellow ChixPay palette.
 - [x] Verify landing, signup, and login on mobile and desktop.
+- [x] Replace placeholder dashboard buttons with usable action panels.
+- [x] Make the real ₦1,000 background notes visibly float.
+- [x] Verify dashboard actions and animation on mobile.
