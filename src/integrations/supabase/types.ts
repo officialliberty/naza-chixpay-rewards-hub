@@ -578,6 +578,7 @@ export type Database = {
         }
         Returns: Json
       }
+      settle_direct_withdrawals: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

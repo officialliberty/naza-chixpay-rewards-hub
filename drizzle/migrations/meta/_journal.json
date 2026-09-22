@@ -120,6 +120,13 @@
       "when": 1790099244001,
       "tag": "0016_admin_revoke_chix_key",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790099482264,
+      "tag": "0017_settle_direct_withdrawals",
+      "breakpoints": true
     }
   ]
 }
