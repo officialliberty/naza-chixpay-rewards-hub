@@ -145,7 +145,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows, policyRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows, policyRows, keyRows] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
@@ -153,7 +153,9 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       supabase.rpc("admin_list_balances"),
       supabase.from("withdrawals").select("amount").eq("stage", "completed"),
       supabase.rpc("admin_list_withdrawal_payments", { _kind: null as unknown as string }),
+      supabase.from("chix_keys").select("user_id, code, uses_left, unlimited, expires_at"),
     ]);
+    if (keyRows.data) setChixKeys(Object.fromEntries(keyRows.data.map((row) => [row.user_id, { code: row.code, uses_left: row.uses_left, unlimited: row.unlimited, expires_at: row.expires_at }])));
     if (policyRows.data) setWithdrawPayments(policyRows.data as unknown as WithdrawPayment[]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
@@ -360,6 +362,14 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     const { error } = await supabase.rpc("admin_adjust_balance", { _user_id: user.id, _amount: amount, _reason: reason });
     if (error) return setMessage("That balance could not be updated.");
     setMessage(`${money(Math.abs(amount))} ${amount > 0 ? "added to" : "removed from"} ${user.full_name ?? user.email}. The member was notified.`);
+    void load();
+  };
+
+  const revokeChixKey = async (user: AdminUser) => {
+    if (!window.confirm(`Revoke the Chix ID from ${user.full_name ?? user.email}? They will no longer be able to withdraw with it.`)) return;
+    const { data, error } = await supabase.rpc("admin_revoke_chix_key", { _user_id: user.id });
+    if (error) return setMessage("That Chix ID could not be revoked.");
+    setMessage(data === true ? `Chix ID revoked from ${user.full_name ?? user.email}. The member was notified.` : "That member has no Chix ID to revoke.");
     void load();
   };
 
