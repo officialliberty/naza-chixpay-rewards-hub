@@ -29,6 +29,13 @@
       "when": 1790081124655,
       "tag": "0003_admin_roles_and_moderation",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790082584851,
+      "tag": "0004_reward_claims",
+      "breakpoints": true
     }
   ]
 }
