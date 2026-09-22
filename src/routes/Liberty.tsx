@@ -111,7 +111,8 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "support">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "wfee" | "wupgrade" | "wfinal" | "support">("overview");
+  const [withdrawPayments, setWithdrawPayments] = useState<WithdrawPayment[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [chixRequests, setChixRequests] = useState<ChixRequest[]>([]);
