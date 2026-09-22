@@ -229,6 +229,19 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
           <p className="text-[10px] uppercase tracking-[0.18em] text-gold">Your Chix ID</p>
           <p className="mt-1 font-display text-2xl font-semibold tracking-[0.1em]">{chixId}</p>
         </div>
+        <div className="mt-3 rounded-[22px] border border-glass-border bg-glass p-4 text-left">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Withdrawals left</span>
+            <span className="font-semibold">{keyInfo?.unlimited ? "Unlimited" : keyInfo?.uses_left ?? 0}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Time left</span>
+            <span className={`font-semibold ${keyInfo?.expires_at && new Date(keyInfo.expires_at).getTime() <= now ? "text-destructive" : "text-gold"}`}>
+              {keyInfo?.unlimited || !keyInfo?.expires_at ? "Never expires" : countdown(keyInfo.expires_at)}
+            </span>
+          </div>
+          {!keyInfo?.unlimited && <p className="mt-2 text-[11px] leading-5 text-muted-foreground">When the time or the withdrawals run out, this key locks and you buy a new Chix ID to withdraw again.</p>}
+        </div>
         <Button variant="glass" size="lg" className="mt-3 w-full rounded-full" onClick={copyId}>{copied ? <Check /> : <Copy />} {copied ? "Chix ID copied" : "Copy Chix ID"}</Button>
         <Button variant="reward" size="lg" className="mt-2 w-full" onClick={onBack}>Back to wallet</Button>
       </div>}
