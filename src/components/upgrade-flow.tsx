@@ -46,7 +46,7 @@ export function UpgradeFlow({ onBack }: { onBack: () => void }) {
     if (!user) { setBusy(false); return setNotice("Please sign in again to submit your upgrade."); }
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${user.id}/${Date.now()}.${ext}`;
-    const upload = await supabase.storage.from("upgrade-receipts").upload(path, file, { contentType: file.type || undefined });
+    const upload = await supabase.storage.from("upgrade-receipts").upload(path, file, { contentType: file.type || "application/octet-stream" });
     if (upload.error) { setBusy(false); return setNotice(upload.error.message); }
     const { error } = await supabase.from("upgrade_requests").insert({ user_id: user.id, plan_name: plan.name, amount: plan.amount, receipt_path: path });
     setBusy(false);
