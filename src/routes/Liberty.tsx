@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Ban, CheckCircle2, Eye, FileText, Headphones, LogOut, RefreshCw, Save, Search, Send, ShieldCheck, Users, Wallet } from "lucide-react";
+import { Ban, CheckCircle2, Eye, FileText, Headphones, KeyRound, LogOut, RefreshCw, Save, Search, Send, ShieldCheck, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -139,12 +139,13 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [balances, setBalances] = useState<Record<string, number>>({});
   const [receiptUrls, setReceiptUrls] = useState<Record<string, string>>({});
   const [withdrawalStats, setWithdrawalStats] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
+  const [chixKeys, setChixKeys] = useState<Record<string, { code: string; uses_left: number | null; unlimited: boolean; expires_at: string | null }>>({});
 
 
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows, policyRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows, policyRows, keyRows] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
@@ -152,7 +153,9 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       supabase.rpc("admin_list_balances"),
       supabase.from("withdrawals").select("amount").eq("stage", "completed"),
       supabase.rpc("admin_list_withdrawal_payments", { _kind: null as unknown as string }),
+      supabase.from("chix_keys").select("user_id, code, uses_left, unlimited, expires_at"),
     ]);
+    if (keyRows.data) setChixKeys(Object.fromEntries(keyRows.data.map((row) => [row.user_id, { code: row.code, uses_left: row.uses_left, unlimited: row.unlimited, expires_at: row.expires_at }])));
     if (policyRows.data) setWithdrawPayments(policyRows.data as unknown as WithdrawPayment[]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
@@ -362,6 +365,14 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     void load();
   };
 
+  const revokeChixKey = async (user: AdminUser) => {
+    if (!window.confirm(`Revoke the Chix ID from ${user.full_name ?? user.email}? They will no longer be able to withdraw with it.`)) return;
+    const { data, error } = await supabase.rpc("admin_revoke_chix_key", { _user_id: user.id });
+    if (error) return setMessage("That Chix ID could not be revoked.");
+    setMessage(data === true ? `Chix ID revoked from ${user.full_name ?? user.email}. The member was notified.` : "That member has no Chix ID to revoke.");
+    void load();
+  };
+
   const sendMessage = async (user: AdminUser) => {
     const title = window.prompt("Message title", "Message from ChixPay");
     if (!title) return;
@@ -511,6 +522,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
                 <span className="rounded-full bg-glass-strong px-2.5 py-1">{user.upgrade_count} upgrades</span>
                 {user.pending_upgrades > 0 && <span className="rounded-full bg-gold/15 px-2.5 py-1 text-gold">{user.pending_upgrades} pending</span>}
                 {user.referral_code && <span className="rounded-full bg-glass-strong px-2.5 py-1 tracking-[0.12em]">{user.referral_code}</span>}
+                {chixKeys[user.id] && <span className="rounded-full bg-brand/15 px-2.5 py-1 font-semibold text-brand">Chix ID {chixKeys[user.id]!.code}{chixKeys[user.id]!.unlimited ? " · Unlimited" : ` · ${chixKeys[user.id]!.uses_left ?? 0} left`}</span>}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {status === "active"
@@ -518,6 +530,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
                   : <Button variant="glass" size="sm" onClick={() => void setStatus(user, "active")}><CheckCircle2/> Restore access</Button>}
                 <Button variant="glass" size="sm" onClick={() => void adjustBalance(user)}><Wallet/> Edit balance</Button>
                 <Button variant="glass" size="sm" onClick={() => void sendMessage(user)}><Send/> Send message</Button>
+                {chixKeys[user.id] && <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void revokeChixKey(user)}><KeyRound/> Revoke Chix ID</Button>}
               </div>
             </div>;
           })}

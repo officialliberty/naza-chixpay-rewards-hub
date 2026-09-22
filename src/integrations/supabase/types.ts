@@ -521,6 +521,7 @@ export type Database = {
           withdrawal_id: string
         }[]
       }
+      admin_revoke_chix_key: { Args: { _user_id: string }; Returns: boolean }
       admin_send_notification: {
         Args: { _body: string; _title: string; _user_id: string }
         Returns: boolean
