@@ -360,11 +360,11 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       <div className="mt-5 flex flex-wrap gap-2">
         <Button variant={tab === "overview" ? "brand" : "glass"} size="sm" onClick={() => setTab("overview")}>Overview</Button>
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
-        <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
-        <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
-        <Button variant={tab === "wfee" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfee")}>Withdrawal fees</Button>
-        <Button variant={tab === "wupgrade" ? "brand" : "glass"} size="sm" onClick={() => setTab("wupgrade")}>Withdrawal upgrades</Button>
-        <Button variant={tab === "wfinal" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfinal")}>Final payments</Button>
+        <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews<CountBadge count={pending}/></Button>
+        <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews<CountBadge count={pendingChix}/></Button>
+        <Button variant={tab === "wfee" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfee")}>Withdrawal fees<CountBadge count={pendingFee}/></Button>
+        <Button variant={tab === "wupgrade" ? "brand" : "glass"} size="sm" onClick={() => setTab("wupgrade")}>Withdrawal upgrades<CountBadge count={pendingWUpgrade}/></Button>
+        <Button variant={tab === "wfinal" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfinal")}>Final payments<CountBadge count={pendingFinal}/></Button>
         <Button variant={tab === "payout" ? "brand" : "glass"} size="sm" onClick={() => setTab("payout")}>Payment account</Button>
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
