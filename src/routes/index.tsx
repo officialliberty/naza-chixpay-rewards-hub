@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import logoMark from "@/assets/chixpay-logo.png";
 import { UpgradeFlow } from "@/components/upgrade-flow";
 import { ReferralPanel } from "@/components/referral-panel";
@@ -170,11 +169,6 @@ function ChixPay() {
     setForm((old) => ({ ...old, email }));
     setScreen("tutorial");
   };
-  const googleLogin = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) setNotice(result.error.message);
-  };
-
   const markRestricted = useCallback((reason: string | null) => setRestriction({ reason }), []);
 
   const logout = async () => {
@@ -229,8 +223,6 @@ function ChixPay() {
           {notice && <p role="alert" className="rounded-xl border border-destructive/25 bg-destructive/15 p-3 text-xs text-destructive-foreground">{notice}</p>}
           <Button disabled={busy} variant="reward" size="lg" className="w-full">{busy ? "Please wait…" : mode === "signup" ? "Continue" : "Log in securely"}<ChevronRight/></Button>
         </form>
-        <div className="my-5 flex items-center gap-3 text-[10px] text-muted-foreground"><span className="h-px flex-1 bg-border"/>OR CONTINUE WITH<span className="h-px flex-1 bg-border"/></div>
-        <Button variant="glass" size="lg" className="w-full" onClick={googleLogin}><span className="grid size-6 place-items-center rounded-full bg-foreground font-display text-xs text-background">G</span> Google</Button>
         <Button variant="ghost" className="mt-4 w-full text-sm text-muted-foreground" onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setNotice(""); }}>{mode === "signup" ? "Already have an account? Log in" : "New to ChixPay? Create an account"}</Button>
       </div>
     </section>}
