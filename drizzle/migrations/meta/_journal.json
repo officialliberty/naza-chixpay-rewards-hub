@@ -78,6 +78,13 @@
       "when": 1790090003778,
       "tag": "0010_withdrawal_policy_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790090997743,
+      "tag": "0011_chix_key_expiry",
+      "breakpoints": true
     }
   ]
 }
