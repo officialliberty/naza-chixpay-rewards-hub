@@ -194,7 +194,7 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           {Array.from({ length: 10 }).map((_, i) => <span key={i} className={`confetti-bit confetti-${i + 1}`} />)}
         </div>
-        <span className="mx-auto grid size-16 place-items-center rounded-[22px] bg-leaf/15 text-leaf claim-pop"><Check className="size-9" /></span>
+        <span className="mx-auto grid size-16 place-items-center rounded-[22px] bg-leaf/15 text-leaf success-pop"><Check className="size-9" /></span>
         <h2 className="mt-5 font-display text-2xl font-semibold">Congratulations 👏</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">Your payment was approved and your Chix ID is now active. Copy it and use it whenever you withdraw.</p>
         <div className="mt-5 rounded-[22px] border border-gold/30 bg-gold/10 p-4">
