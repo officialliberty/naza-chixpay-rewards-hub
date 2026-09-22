@@ -171,8 +171,8 @@ const actions = [
 ];
 
 function Dashboard({ name, state }: { name: string; state: string }) {
-  const [nextClaimAt, setNextClaimAt] = useState(() => Date.now() + 10 * 60 * 1000);
-  const [seconds, setSeconds] = useState(600); const [balance, setBalance] = useState(170000); const [message, setMessage] = useState("");
+  const [nextClaimAt, setNextClaimAt] = useState(() => Date.now());
+  const [seconds, setSeconds] = useState(0); const [balance, setBalance] = useState(170000); const [message, setMessage] = useState("");
   useEffect(() => {
     const updateCountdown = () => setSeconds(Math.max(0, Math.ceil((nextClaimAt - Date.now()) / 1000)));
     updateCountdown();
