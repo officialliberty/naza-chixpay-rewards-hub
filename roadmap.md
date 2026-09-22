@@ -9,3 +9,6 @@
 - [x] Fix login handling for accounts awaiting email confirmation.
 - [x] Add confirmation-email guidance and resend action.
 - [x] Restore confirmed sessions and open the signed-in dashboard.
+- [x] Add a complete member profile page with saved profile photos.
+- [x] Add remembered light and dark appearance modes.
+- [x] Add secure member logout and verify the profile experience.

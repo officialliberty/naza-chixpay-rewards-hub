@@ -121,6 +121,12 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    const stored = window.localStorage.getItem("chixpay-theme");
+    const theme = stored === "dark" || stored === "light" ? stored : "light";
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}

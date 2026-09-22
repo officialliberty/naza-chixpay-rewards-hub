@@ -43,6 +43,13 @@
       "when": 1790083884957,
       "tag": "0005_chix_keys_and_withdrawals",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790085214824,
+      "tag": "0006_profile_photos",
+      "breakpoints": true
     }
   ]
 }
