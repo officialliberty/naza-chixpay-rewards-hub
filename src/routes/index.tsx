@@ -19,6 +19,7 @@ import { WithdrawFlow } from "@/components/withdraw-flow";
 import { ProfilePage } from "@/components/profile-page";
 import { SupportPage } from "@/components/support-page";
 import { TasksPage } from "@/components/tasks-page";
+import { RestrictedScreen } from "@/components/restricted-screen";
 
 import nairaNote from "@/assets/naira-1000-clean.png";
 
@@ -87,6 +88,7 @@ function ChixPay() {
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [restriction, setRestriction] = useState<{ reason: string | null } | null>(null);
 
   useEffect(() => {
     const openSignedInAccount = async () => {
