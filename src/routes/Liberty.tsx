@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Ban, CheckCircle2, Eye, FileText, LogOut, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
+import { Ban, CheckCircle2, Eye, FileText, Headphones, LogOut, RefreshCw, Save, Search, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,27 +106,36 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"users" | "upgrades" | "chixids">("users");
+  const [tab, setTab] = useState<"users" | "upgrades" | "chixids" | "support">("users");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [chixRequests, setChixRequests] = useState<ChixRequest[]>([]);
   const [chixCode, setChixCode] = useState("");
+  const [supportEmail, setSupportEmail] = useState("");
+  const [telegramUrl, setTelegramUrl] = useState("");
+  const [whatsappUrl, setWhatsappUrl] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingSupport, setSavingSupport] = useState(false);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, setting] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
-      supabase.from("app_settings").select("value").eq("key", "chix_id_code").maybeSingle(),
+      supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url"]),
     ]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
     if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
-    if (setting.data?.value) setChixCode(setting.data.value);
+    for (const setting of settings.data ?? []) {
+      if (setting.key === "chix_id_code") setChixCode(setting.value);
+      if (setting.key === "support_email") setSupportEmail(setting.value);
+      if (setting.key === "support_telegram_url") setTelegramUrl(setting.value);
+      if (setting.key === "support_whatsapp_url") setWhatsappUrl(setting.value);
+    }
     if (userRows.error || requestRows.error) setMessage("Some records could not be loaded. Try refreshing.");
     setLoading(false);
   }, []);
@@ -138,6 +147,23 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     if (!value) return setMessage("Enter a Chix ID before saving.");
     const { error } = await supabase.rpc("admin_set_setting", { _key: "chix_id_code", _value: value });
     setMessage(error ? "The Chix ID could not be saved." : `Chix ID updated to ${value}.`);
+  };
+
+  const saveSupportSettings = async () => {
+    const emailValue = supportEmail.trim();
+    const telegramValue = telegramUrl.trim();
+    const whatsappValue = whatsappUrl.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue) || emailValue.length > 255) return setMessage("Enter a valid support email address.");
+    if (!/^https:\/\/(t\.me|telegram\.me)\/[A-Za-z0-9_+/?=&.-]+$/i.test(telegramValue) || telegramValue.length > 500) return setMessage("Enter a valid secure Telegram link.");
+    if (!/^https:\/\/(chat\.whatsapp\.com|whatsapp\.com\/channel)\/[A-Za-z0-9_+/?=&.-]+$/i.test(whatsappValue) || whatsappValue.length > 500) return setMessage("Enter a valid private WhatsApp channel link.");
+    setSavingSupport(true);
+    const results = await Promise.all([
+      supabase.rpc("admin_set_setting", { _key: "support_email", _value: emailValue }),
+      supabase.rpc("admin_set_setting", { _key: "support_telegram_url", _value: telegramValue }),
+      supabase.rpc("admin_set_setting", { _key: "support_whatsapp_url", _value: whatsappValue }),
+    ]);
+    setSavingSupport(false);
+    setMessage(results.some(({ error }) => error) ? "The support contacts could not be saved." : "Support contacts updated for all members.");
   };
 
   const setChixRequestStatus = async (request: ChixRequest, status: string) => {
@@ -196,11 +222,22 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
       {message && <Button variant="glass" className="mt-3 h-auto w-full justify-start whitespace-normal rounded-2xl border-leaf/25 bg-leaf/10 p-3 text-left text-xs text-leaf" onClick={() => setMessage("")}>{message}</Button>}
 
-      <div className="mt-5 flex gap-2">
+      <div className="mt-5 flex flex-wrap gap-2">
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
         <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
         <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
+        <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
+
+      {tab === "support" && <Panel className="mt-3">
+        <div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-leaf/15 text-leaf"><Headphones className="size-5"/></span><div><h2 className="font-display text-lg font-semibold">Member support contacts</h2><p className="text-xs text-muted-foreground">These options appear in every member’s Support menu.</p></div></div>
+        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Support email</span><Input type="email" maxLength={255} value={supportEmail} onChange={(event) => setSupportEmail(event.target.value)} placeholder="support@chixpay.com" className="h-12 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Telegram support link</span><Input type="url" maxLength={500} value={telegramUrl} onChange={(event) => setTelegramUrl(event.target.value)} placeholder="https://t.me/chixpaysupport" className="h-12 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Private WhatsApp channel link</span><Input type="url" maxLength={500} value={whatsappUrl} onChange={(event) => setWhatsappUrl(event.target.value)} placeholder="https://whatsapp.com/channel/..." className="h-12 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
+        </div>
+        <Button disabled={savingSupport} variant="reward" size="lg" className="mt-5" onClick={() => void saveSupportSettings()}><Save/> {savingSupport ? "Saving…" : "Save support contacts"}</Button>
+      </Panel>}
 
       {tab === "chixids" && <>
         <Panel className="mt-3">

@@ -1,14 +1,6 @@
 # Roadmap
-- [x] Redesign the landing page as a credible 2026 fintech experience without pre-login balance details.
-- [x] Redesign registration and login as polished, realistic account flows.
-- [x] Preserve the existing blue, green, and yellow ChixPay palette.
-- [x] Verify landing, signup, and login on mobile and desktop.
-- [x] Replace placeholder dashboard buttons with usable action panels.
-- [x] Make the real ₦1,000 background notes visibly float.
-- [x] Verify dashboard actions and animation on mobile.
-- [x] Fix login handling for accounts awaiting email confirmation.
-- [x] Add confirmation-email guidance and resend action.
-- [x] Restore confirmed sessions and open the signed-in dashboard.
-- [x] Add a complete member profile page with saved profile photos.
-- [x] Add remembered light and dark appearance modes.
-- [x] Add secure member logout and verify the profile experience.
+
+- [x] Replace Videos with Support across member screens
+- [x] Add email, Telegram, and private WhatsApp support screen
+- [x] Add admin-editable support contacts with validation
+- [x] Verify member and admin experiences on mobile and desktop
