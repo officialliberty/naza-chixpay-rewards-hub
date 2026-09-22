@@ -123,6 +123,7 @@ function ChixPay() {
     setBusy(false);
     if (error) return setNotice(error.message === "Invalid login credentials" ? "The email or password is incorrect. Please try again." : error.message);
     if (!data.user) return setNotice("We could not open your account. Please try again.");
+    if (await blockedIfRestricted(data.user.id)) return;
     const meta = ((data.user.user_metadata ?? {}) as Partial<FormData>);
     setForm((old) => ({ ...old, fullName: meta.fullName ?? "ChixPay member", phone: meta.phone ?? "", state: meta.state ?? "Lagos" }));
     setScreen("dashboard");
