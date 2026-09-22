@@ -29,6 +29,99 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      chix_key_requests: {
+        Row: {
+          amount: number
+          chix_id: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          plan_name: string
+          receipt_path: string | null
+          reviewed_at: string | null
+          status: string
+          user_id: string
+          uses_total: number | null
+        }
+        Insert: {
+          amount: number
+          chix_id?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          plan_name: string
+          receipt_path?: string | null
+          reviewed_at?: string | null
+          status?: string
+          user_id: string
+          uses_total?: number | null
+        }
+        Update: {
+          amount?: number
+          chix_id?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          plan_name?: string
+          receipt_path?: string | null
+          reviewed_at?: string | null
+          status?: string
+          user_id?: string
+          uses_total?: number | null
+        }
+        Relationships: []
+      }
+      chix_keys: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          unlimited: boolean
+          updated_at: string
+          user_id: string
+          uses_left: number | null
+          uses_total: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          unlimited?: boolean
+          updated_at?: string
+          user_id: string
+          uses_left?: number | null
+          uses_total?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          unlimited?: boolean
+          updated_at?: string
+          user_id?: string
+          uses_left?: number | null
+          uses_total?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -170,11 +263,60 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawals: {
+        Row: {
+          account_number: string
+          amount: number
+          bank_name: string
+          created_at: string
+          full_name: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_number: string
+          amount: number
+          bank_name: string
+          created_at?: string
+          full_name: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string
+          amount?: number
+          bank_name?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_list_chix_requests: {
+        Args: never
+        Returns: {
+          amount: number
+          chix_id: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          plan_name: string
+          receipt_path: string
+          status: string
+          user_id: string
+          uses_total: number
+        }[]
+      }
       admin_list_upgrade_requests: {
         Args: never
         Returns: {
@@ -211,6 +353,14 @@ export type Database = {
         Args: { _reason?: string; _status: string; _user_id: string }
         Returns: boolean
       }
+      admin_set_chix_request_status: {
+        Args: { _request_id: string; _status: string }
+        Returns: boolean
+      }
+      admin_set_setting: {
+        Args: { _key: string; _value: string }
+        Returns: boolean
+      }
       admin_set_upgrade_status: {
         Args: { _request_id: string; _status: string }
         Returns: boolean
@@ -224,6 +374,16 @@ export type Database = {
         Returns: boolean
       }
       redeem_referral: { Args: { _code: string; _name: string }; Returns: Json }
+      request_withdrawal: {
+        Args: {
+          _account: string
+          _amount: number
+          _bank: string
+          _code: string
+          _full_name: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

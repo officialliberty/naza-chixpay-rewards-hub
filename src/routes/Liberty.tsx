@@ -29,6 +29,7 @@ type AdminRequest = {
   id: string; user_id: string; email: string | null; full_name: string | null; plan_name: string;
   amount: number; receipt_path: string | null; status: string; created_at: string;
 };
+type ChixRequest = AdminRequest & { uses_total: number | null; chix_id: string | null };
 
 const money = (value: number) => `₦${Number(value).toLocaleString()}`;
 const when = (value: string | null) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }) : "Never";
@@ -105,26 +106,46 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"users" | "upgrades">("users");
+  const [tab, setTab] = useState<"users" | "upgrades" | "chixids">("users");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
+  const [chixRequests, setChixRequests] = useState<ChixRequest[]>([]);
+  const [chixCode, setChixCode] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, setting] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
+      supabase.rpc("admin_list_chix_requests"),
+      supabase.from("app_settings").select("value").eq("key", "chix_id_code").maybeSingle(),
     ]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
+    if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
+    if (setting.data?.value) setChixCode(setting.data.value);
     if (userRows.error || requestRows.error) setMessage("Some records could not be loaded. Try refreshing.");
     setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const saveChixCode = async () => {
+    const value = chixCode.trim();
+    if (!value) return setMessage("Enter a Chix ID before saving.");
+    const { error } = await supabase.rpc("admin_set_setting", { _key: "chix_id_code", _value: value });
+    setMessage(error ? "The Chix ID could not be saved." : `Chix ID updated to ${value}.`);
+  };
+
+  const setChixRequestStatus = async (request: ChixRequest, status: string) => {
+    const { error } = await supabase.rpc("admin_set_chix_request_status", { _request_id: request.id, _status: status });
+    if (error) return setMessage("That Chix ID request could not be updated.");
+    setMessage(status === "approved" ? "Chix ID released to the member." : `Chix ID request ${status}.`);
+    void load();
+  };
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -178,7 +199,41 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       <div className="mt-5 flex gap-2">
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
         <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
+        <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
       </div>
+
+      {tab === "chixids" && <>
+        <Panel className="mt-3">
+          <p className="font-display text-sm font-semibold">Chix ID issued to approved members</p>
+          <p className="mt-1 text-xs text-muted-foreground">This is the ID released to every member once their key payment is approved.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Input value={chixCode} onChange={(e) => setChixCode(e.target.value.toUpperCase())} placeholder="CHIX-76628-22" className="h-12 max-w-xs rounded-2xl border-glass-border bg-background/45 px-4 tracking-[0.14em]"/>
+            <Button variant="reward" size="lg" onClick={() => void saveChixCode()}>Save Chix ID</Button>
+          </div>
+        </Panel>
+        <Panel className="mt-3">
+          <div className="space-y-3">
+            {loading && <p className="text-sm text-muted-foreground">Loading Chix ID payments…</p>}
+            {!loading && chixRequests.length === 0 && <p className="text-sm text-muted-foreground">No Chix ID payments yet.</p>}
+            {chixRequests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
+                  <p className="text-xs text-muted-foreground">{request.full_name ?? "Unnamed member"} · {request.email ?? "No email"}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{request.uses_total === null ? "Unlimited uses" : `${request.uses_total} use${request.uses_total === 1 ? "" : "s"}`} · Submitted {when(request.created_at)}</p>
+                  {request.chix_id && <p className="mt-1 text-[11px] text-leaf">Released ID: {request.chix_id}</p>}
+                </div>
+                <StatusPill status={request.status}/>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
+                <Button variant="reward" size="sm" onClick={() => void setChixRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
+                <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setChixRequestStatus(request, "rejected")}><Ban/> Reject</Button>
+              </div>
+            </div>)}
+          </div>
+        </Panel>
+      </>}
 
       {tab === "users" && <Panel className="mt-3">
         <div className="flex items-center gap-2 rounded-2xl border border-glass-border bg-background/45 px-3"><Search className="size-4 text-muted-foreground"/><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, email, phone, state or code" className="h-12 border-0 bg-transparent px-1 focus-visible:ring-0"/></div>
