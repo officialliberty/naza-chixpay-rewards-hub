@@ -465,8 +465,8 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Panel className="mt-3">
           <div className="space-y-3">
             {loading && <p className="text-sm text-muted-foreground">Loading Chix ID payments…</p>}
-            {!loading && chixRequests.length === 0 && <p className="text-sm text-muted-foreground">No Chix ID payments yet.</p>}
-            {chixRequests.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+            {!loading && openChix.length === 0 && <p className="text-sm text-muted-foreground">No Chix ID payments waiting for review.</p>}
+            {openChix.map((request) => <div key={request.id} className="rounded-2xl border border-glass-border bg-glass p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-display text-sm font-semibold">{request.plan_name} · {money(request.amount)}</p>
