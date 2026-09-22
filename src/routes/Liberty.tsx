@@ -138,7 +138,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
-      supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url"]),
+      supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url", "withdraw_direct"]),
       supabase.rpc("admin_list_balances"),
       supabase.from("withdrawals").select("amount").eq("stage", "completed"),
       supabase.rpc("admin_list_withdrawal_payments", { _kind: null as unknown as string }),
@@ -154,6 +154,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
       if (setting.key === "support_email") setSupportEmail(setting.value);
       if (setting.key === "support_telegram_url") setTelegramUrl(setting.value);
       if (setting.key === "support_whatsapp_url") setWhatsappUrl(setting.value);
+      if (setting.key === "withdraw_direct") setDirectWithdraw(setting.value === "on");
     }
     if (userRows.error || requestRows.error) setMessage("Some records could not be loaded. Try refreshing.");
     setLoading(false);
@@ -166,6 +167,15 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     if (!value) return setMessage("Enter a Chix ID before saving.");
     const { error } = await supabase.rpc("admin_set_setting", { _key: "chix_id_code", _value: value });
     setMessage(error ? "The Chix ID could not be saved." : `Chix ID updated to ${value}.`);
+  };
+
+  const saveDirectWithdraw = async (value: boolean) => {
+    setSavingDirect(true);
+    const { error } = await supabase.rpc("admin_set_setting", { _key: "withdraw_direct", _value: value ? "on" : "off" });
+    setSavingDirect(false);
+    if (error) return setMessage("The withdrawal mode could not be saved.");
+    setDirectWithdraw(value);
+    setMessage(value ? "Direct withdrawal is ON — members withdraw with no extra payments." : "Direct withdrawal is OFF — members pass through all payment steps.");
   };
 
   const saveSupportSettings = async () => {
