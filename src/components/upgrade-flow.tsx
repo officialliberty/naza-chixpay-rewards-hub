@@ -80,7 +80,7 @@ export function UpgradeFlow({ onBack }: { onBack: () => void }) {
         <Button variant="glass" size="icon" aria-label="Back" className="rounded-full" onClick={onBack}><ArrowLeft /></Button>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-leaf">Account upgrade</p>
-          <h1 className="font-display text-xl font-semibold">{step === "pending" ? "Upgrade pending" : step === "payment" ? "Make payment" : "Choose a plan"}</h1>
+          <h1 className="font-display text-xl font-semibold">{step === "pending" ? "Upgrade pending" : step === "payment" ? "Make payment" : step === "confirm" ? "Confirm your name" : "Choose a plan"}</h1>
         </div>
       </header>
 
@@ -102,7 +102,24 @@ export function UpgradeFlow({ onBack }: { onBack: () => void }) {
         ))}
       </div>}
 
-      {step === "loading" && <ChixLoader title={`Preparing ${plan?.name ?? ""} plan`} note="Generating your secure payment details…" />}
+      {step === "loading" && <ChixLoader title={`Preparing ${plan?.name ?? ""} plan`} note="Setting up your upgrade…" />}
+
+      {step === "confirm" && plan && <div className="auth-enter mt-5 space-y-4">
+        <div className="rounded-[26px] border border-glass-border bg-glass p-4 backdrop-blur-xl">
+          <p className="text-xs font-semibold">Confirm your name</p>
+          <p className="mt-1 text-[11px] leading-5 text-muted-foreground">Make sure this matches the name on the bank account you will pay from, so your payment can be approved.</p>
+          <Input value={confirmName} onChange={(e) => { setConfirmName(e.target.value); setNotice(""); }} placeholder="Your full name" autoComplete="name" className="mt-3 h-12 rounded-2xl border-glass-border bg-background/45" />
+        </div>
+        <div className="flex items-center justify-between rounded-[26px] border border-leaf/25 bg-leaf/10 p-4 text-xs">
+          <span className="text-muted-foreground">{plan.name} plan</span>
+          <span className="font-display text-base font-semibold text-leaf">₦{plan.amount.toLocaleString()}</span>
+        </div>
+        {notice && <p role="alert" className="rounded-xl border border-destructive/25 bg-destructive/15 p-3 text-xs">{notice}</p>}
+        <Button variant="reward" size="lg" className="w-full" onClick={confirmIdentity}>Confirm and continue</Button>
+        <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => setStep("select")}>Choose another plan</Button>
+      </div>}
+
+      {step === "loading2" && <ChixLoader title={`Hello, ${confirmName.trim().split(/\s+/)[0]}`} note="Generating your secure payment details…" />}
 
       {step === "payment" && plan && <div className="auth-enter mt-5 space-y-4">
         <div className="rounded-[26px] border border-leaf/25 bg-leaf/10 p-4">
