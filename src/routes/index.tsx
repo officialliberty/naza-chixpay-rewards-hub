@@ -102,7 +102,7 @@ function ChixPay() {
         phone: meta.phone ?? old.phone,
         state: meta.state ?? old.state ?? "Lagos",
       }));
-      setScreen("dashboard");
+      void blockedIfRestricted(session.user.id).then((blocked) => { if (!blocked) setScreen("dashboard"); });
     });
     return () => listener.subscription.unsubscribe();
   }, []);
