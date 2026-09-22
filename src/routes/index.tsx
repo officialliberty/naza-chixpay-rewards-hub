@@ -266,11 +266,12 @@ function Dashboard({ name, state }: { name: string; state: string }) {
   const [seconds, setSeconds] = useState(0); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [chixIdActive, setChixIdActive] = useState(false);
-  const [view, setView] = useState<"home" | "upgrade" | "referral">("home");
+  const [view, setView] = useState<"home" | "upgrade" | "referral" | "chixid" | "withdraw">("home");
   const [claimHistory, setClaimHistory] = useState<ClaimRecord[]>([]);
+  const [withdrawn, setWithdrawn] = useState(0);
   const [cashBurst, setCashBurst] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
-  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0);
+  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) - withdrawn;
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -278,8 +279,16 @@ function Dashboard({ name, state }: { name: string; state: string }) {
       const id = data.user?.id;
       if (!id || cancelled) return;
       setUserId(id);
-      const { data: rows } = await supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false });
-      if (cancelled || !rows) return;
+      const [claims, payouts, key] = await Promise.all([
+        supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false }),
+        supabase.from("withdrawals").select("amount").eq("user_id", id),
+        supabase.from("chix_keys").select("uses_left, unlimited").eq("user_id", id).maybeSingle(),
+      ]);
+      if (cancelled) return;
+      if (payouts.data) setWithdrawn(payouts.data.reduce((total, row) => total + Number(row.amount), 0));
+      if (key.data) setChixIdActive(Boolean(key.data.unlimited) || (key.data.uses_left ?? 0) > 0);
+      const rows = claims.data;
+      if (!rows) return;
       setClaimHistory(rows.map((row) => ({ id: new Date(row.created_at).getTime(), claimedAt: new Date(row.created_at).getTime(), amount: Number(row.amount) })));
       const latest = rows[0];
       if (latest) setNextClaimAt(new Date(latest.created_at).getTime() + CLAIM_COOLDOWN);
