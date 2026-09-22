@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import logoMark from "@/assets/chixpay-logo.png";
+
 import nairaNote from "@/assets/naira-1000.png.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -56,7 +58,7 @@ function PublicShell({ children }: { children: React.ReactNode }) {
 }
 
 function Brand() {
-  return <div className="flex items-center gap-2.5"><div className="grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-leaf to-brand font-display text-lg font-bold text-primary-foreground shadow-brand">C</div><div><p className="font-display text-lg font-bold leading-none">Chix<span className="text-gold">Pay</span></p><p className="mt-1 text-[10px] text-muted-foreground">Move forward with rewards</p></div></div>;
+  return <div className="flex items-center gap-2.5"><img src={logoMark} alt="ChixPay logo" width={40} height={40} loading="eager" className="size-10 rounded-2xl shadow-brand object-cover"/><div><p className="font-display text-lg font-bold leading-none">Chix<span className="text-gold">Pay</span></p><p className="mt-1 text-[10px] text-muted-foreground">Move forward with rewards</p></div></div>;
 }
 
 function ChixPay() {
