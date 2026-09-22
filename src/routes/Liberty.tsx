@@ -139,7 +139,8 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const setStatus = async (user: AdminUser, status: string) => {
     const reason = status === "active" ? null : window.prompt("Reason for restricting this account?", "Suspicious activity");
     if (status !== "active" && reason === null) return;
-    const { error } = await supabase.rpc("admin_set_account_status", { _user_id: user.id, _status: status, _reason: reason ?? undefined });
+    const args = reason === null ? { _user_id: user.id, _status: status } : { _user_id: user.id, _status: status, _reason: reason };
+    const { error } = await supabase.rpc("admin_set_account_status", args);
     if (error) return setMessage("That account could not be updated.");
     setMessage(status === "active" ? `${user.full_name ?? user.email} was restored.` : `${user.full_name ?? user.email} is now restricted.`);
     void load();
