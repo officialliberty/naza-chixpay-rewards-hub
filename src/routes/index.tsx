@@ -326,23 +326,27 @@ function Dashboard({ name, state }: { name: string; state: string }) {
   const openAction = (label: string) => {
     if (label === "Upgrade") return setView("upgrade");
     if (label === "Referral") return setView("referral");
+    if (label === "Buy Chix ID") return setView("chixid");
+    if (label === "Withdraw") return setView("withdraw");
     setActiveAction(label);
   };
   const completeAction = () => {
     if (!activeAction) return;
-    if (activeAction === "Withdraw" && !chixIdActive) {
-      setMessage("Activate your Chix ID before making a withdrawal.");
-      setActiveAction("Buy Chix ID");
-      return;
-    }
-    if (activeAction === "Buy Chix ID") setChixIdActive(true);
     const completed = activeAction;
     setActiveAction(null);
-    setMessage(completed === "Buy Chix ID" ? "Your Chix ID is now active." : `${completed} action completed.`);
+    setMessage(`${completed} action completed.`);
   };
   const activeCopy = activeAction ? actionCopy[activeAction] : undefined;
   if (view === "upgrade") return <Shell><UpgradeFlow onBack={() => setView("home")}/></Shell>;
   if (view === "referral") return <Shell><ReferralPanel onBack={() => setView("home")}/></Shell>;
+  if (view === "chixid") return <Shell><ChixIdFlow onBack={() => setView("home")} onActivated={() => setChixIdActive(true)}/></Shell>;
+  if (view === "withdraw") return <Shell><WithdrawFlow
+    onBack={() => setView("home")}
+    balance={balance}
+    defaultName={name}
+    onNeedKey={(text) => { setMessage(text); setView("chixid"); }}
+    onSuccess={(amount) => { setWithdrawn((total) => total + amount); setChixIdActive(true); }}
+  /></Shell>;
   return <Shell>
     <CashFall burst={cashBurst}/>
     <header className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="grid size-10 place-items-center rounded-full border border-glass-border bg-glass font-display text-sm font-semibold text-gold">{name.charAt(0).toUpperCase()}</div><div><p className="font-display text-sm font-semibold">{name}</p><p className="text-[11px] text-muted-foreground">{state} State</p></div></div><Button aria-label="Notifications" variant="glass" size="icon" className="rounded-full" onClick={() => openAction("Notifications")}><Bell/></Button></header>
