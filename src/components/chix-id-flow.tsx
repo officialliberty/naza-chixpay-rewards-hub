@@ -8,13 +8,31 @@ import { ChixLoader } from "@/components/chix-loader";
 export type KeyPlan = { name: string; amount: number; uses: number | null; note: string };
 
 export const keyPlans: KeyPlan[] = [
-  { name: "Basic Key", amount: 6200, uses: 1, note: "Valid for 1 withdrawal" },
-  { name: "Standard Key", amount: 9400, uses: 2, note: "Valid for 2 withdrawals" },
-  { name: "Premium Key", amount: 14900, uses: 3, note: "Valid for 3 withdrawals" },
-  { name: "Gold Key", amount: 25600, uses: 4, note: "Valid for 4 withdrawals" },
-  { name: "Platinum Key", amount: 35900, uses: 5, note: "Valid for 5 withdrawals" },
-  { name: "Diamond Key", amount: 42800, uses: null, note: "Valid for unlimited withdrawals" },
+  { name: "Basic Key", amount: 6200, uses: 1, note: "1 withdrawal · valid 24 hours (1 day)" },
+  { name: "Standard Key", amount: 9400, uses: 2, note: "2 withdrawals · valid 48 hours (2 days)" },
+  { name: "Premium Key", amount: 14900, uses: 3, note: "3 withdrawals · valid 72 hours (3 days)" },
+  { name: "Gold Key", amount: 25600, uses: 4, note: "4 withdrawals · valid 96 hours (4 days)" },
+  { name: "Platinum Key", amount: 35900, uses: 5, note: "5 withdrawals · valid 120 hours (5 days)" },
+  { name: "Diamond Key", amount: 42800, uses: null, note: "Unlimited withdrawals · never expires" },
 ];
+
+export type KeyInfo = { code: string; uses_left: number | null; unlimited: boolean; expires_at: string | null };
+
+export const keyIsActive = (key: KeyInfo | null | undefined) => {
+  if (!key) return false;
+  if (key.unlimited) return true;
+  if ((key.uses_left ?? 0) <= 0) return false;
+  return !key.expires_at || new Date(key.expires_at).getTime() > Date.now();
+};
+
+const countdown = (iso: string) => {
+  const left = new Date(iso).getTime() - Date.now();
+  if (left <= 0) return "Expired";
+  const hours = Math.floor(left / 3600000);
+  const minutes = Math.floor((left % 3600000) / 60000);
+  const seconds = Math.floor((left % 60000) / 1000);
+  return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+};
 
 const payment = { bank: "ChixPay Collections (Demo)", accountName: "ChixPay Technologies Ltd", accountNumber: "0000000000" };
 
@@ -29,6 +47,8 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState(false);
   const [chixId, setChixId] = useState("");
+  const [keyInfo, setKeyInfo] = useState<KeyInfo | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,11 +59,12 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
       if (cancelled || !user) return;
       const meta = user.user_metadata as { fullName?: string; full_name?: string } | undefined;
       setFullName(meta?.fullName ?? meta?.full_name ?? "");
-      const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited").eq("user_id", user.id).maybeSingle();
+      const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited, expires_at").eq("user_id", user.id).maybeSingle();
       if (cancelled) return;
-      if (key && (key.unlimited || (key.uses_left ?? 0) > 0)) {
-        setChixId(key.code);
-        onActivated?.(key.code);
+      if (keyIsActive(key)) {
+        setKeyInfo(key as KeyInfo);
+        setChixId(key!.code);
+        onActivated?.(key!.code);
         setStep("approved");
         return;
       }
@@ -53,6 +74,12 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
     })();
     return () => { cancelled = true; };
   }, [onActivated]);
+
+  useEffect(() => {
+    if (step !== "approved" || !keyInfo?.expires_at) return undefined;
+    const tick = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [step, keyInfo]);
 
   useEffect(() => {
     if (step !== "loading") return undefined;
@@ -91,11 +118,12 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
     if (!user) { setBusy(false); return setNotice("Please sign in again."); }
-    const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited").eq("user_id", user.id).maybeSingle();
+    const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited, expires_at").eq("user_id", user.id).maybeSingle();
     setBusy(false);
-    if (key && (key.unlimited || (key.uses_left ?? 0) > 0)) {
-      setChixId(key.code);
-      onActivated?.(key.code);
+    if (keyIsActive(key)) {
+      setKeyInfo(key as KeyInfo);
+      setChixId(key!.code);
+      onActivated?.(key!.code);
       setStep("approved");
       return;
     }
@@ -131,7 +159,7 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
       </div>}
 
       {step === "select" && <div className="auth-enter mt-5 space-y-3">
-        <p className="text-xs leading-5 text-muted-foreground">Choose a plan that fits your usage. Each key unlocks a set number of withdrawals, then locks.</p>
+        <p className="text-xs leading-5 text-muted-foreground">Choose a plan that fits your usage. Each key unlocks a set number of withdrawals and stays valid for one day per withdrawal — when the time runs out you buy a new key. The Diamond Key never expires.</p>
         {keyPlans.map((item) => (
           <button key={item.name} onClick={() => choosePlan(item)} className="w-full rounded-[24px] border border-glass-border bg-glass p-4 text-left backdrop-blur-xl transition hover:border-leaf/40">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">{item.name}</p>
@@ -200,6 +228,19 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
         <div className="mt-5 rounded-[22px] border border-gold/30 bg-gold/10 p-4">
           <p className="text-[10px] uppercase tracking-[0.18em] text-gold">Your Chix ID</p>
           <p className="mt-1 font-display text-2xl font-semibold tracking-[0.1em]">{chixId}</p>
+        </div>
+        <div className="mt-3 rounded-[22px] border border-glass-border bg-glass p-4 text-left">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Withdrawals left</span>
+            <span className="font-semibold">{keyInfo?.unlimited ? "Unlimited" : keyInfo?.uses_left ?? 0}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Time left</span>
+            <span className={`font-semibold ${keyInfo?.expires_at && new Date(keyInfo.expires_at).getTime() <= now ? "text-destructive" : "text-gold"}`}>
+              {keyInfo?.unlimited || !keyInfo?.expires_at ? "Never expires" : countdown(keyInfo.expires_at)}
+            </span>
+          </div>
+          {!keyInfo?.unlimited && <p className="mt-2 text-[11px] leading-5 text-muted-foreground">When the time or the withdrawals run out, this key locks and you buy a new Chix ID to withdraw again.</p>}
         </div>
         <Button variant="glass" size="lg" className="mt-3 w-full rounded-full" onClick={copyId}>{copied ? <Check /> : <Copy />} {copied ? "Chix ID copied" : "Copy Chix ID"}</Button>
         <Button variant="reward" size="lg" className="mt-2 w-full" onClick={onBack}>Back to wallet</Button>

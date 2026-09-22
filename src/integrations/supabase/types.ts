@@ -120,6 +120,7 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          expires_at: string | null
           id: string
           unlimited: boolean
           updated_at: string
@@ -130,6 +131,7 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           unlimited?: boolean
           updated_at?: string
@@ -140,6 +142,7 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           unlimited?: boolean
           updated_at?: string

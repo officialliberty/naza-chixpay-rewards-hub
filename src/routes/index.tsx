@@ -14,7 +14,7 @@ import { lovable } from "@/integrations/lovable";
 import logoMark from "@/assets/chixpay-logo.png";
 import { UpgradeFlow } from "@/components/upgrade-flow";
 import { ReferralPanel } from "@/components/referral-panel";
-import { ChixIdFlow } from "@/components/chix-id-flow";
+import { ChixIdFlow, keyIsActive, type KeyInfo } from "@/components/chix-id-flow";
 import { WithdrawFlow } from "@/components/withdraw-flow";
 import { ProfilePage } from "@/components/profile-page";
 import { SupportPage } from "@/components/support-page";
@@ -304,7 +304,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
       const [claims, payouts, key, profile, tasks, extras, alerts] = await Promise.all([
         supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false }),
         supabase.from("withdrawals").select("amount").eq("user_id", id).eq("stage", "completed"),
-        supabase.from("chix_keys").select("uses_left, unlimited").eq("user_id", id).maybeSingle(),
+        supabase.from("chix_keys").select("uses_left, unlimited, expires_at, code").eq("user_id", id).maybeSingle(),
         supabase.from("profiles").select("avatar_path, status, restriction_reason").eq("id", id).maybeSingle(),
         supabase.from("task_completions").select("amount").eq("user_id", id),
         supabase.from("balance_adjustments").select("amount").eq("user_id", id),
@@ -316,7 +316,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
       if (tasks.data) setTaskEarned(tasks.data.reduce((total, row) => total + Number(row.amount), 0));
       if (extras.data) setAdjustments(extras.data.reduce((total, row) => total + Number(row.amount), 0));
       if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
-      if (key.data) setChixIdActive(Boolean(key.data.unlimited) || (key.data.uses_left ?? 0) > 0);
+      setChixIdActive(keyIsActive(key.data as KeyInfo | null));
       if (profile.data?.avatar_path) {
         const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(profile.data.avatar_path, 60 * 60 * 24);
         if (signed?.signedUrl) setAvatarUrl(signed.signedUrl);
