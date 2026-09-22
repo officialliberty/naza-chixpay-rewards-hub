@@ -264,11 +264,11 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const receiptPreview = (path: string | null) => {
     if (!path) return <div className="mt-3 grid h-24 w-32 place-items-center rounded-xl border border-glass-border bg-background/45 text-[11px] text-muted-foreground">No receipt</div>;
     const isPdf = path.toLowerCase().endsWith(".pdf");
-    return <button type="button" aria-label="Open uploaded receipt" onClick={() => void openPath(path)} className="mt-3 block h-24 w-32 overflow-hidden rounded-xl border border-glass-border bg-background/45">
+    return <Button type="button" variant="glass" aria-label="Open uploaded receipt" onClick={() => void openPath(path)} className="mt-3 block h-24 w-32 overflow-hidden rounded-xl p-0">
       {isPdf || !receiptUrls[path]
         ? <span className="grid h-full place-items-center text-muted-foreground"><FileText className="size-6"/><span className="text-[10px]">Receipt file</span></span>
         : <img src={receiptUrls[path]} alt="Uploaded payment receipt" className="h-full w-full object-cover"/>}
-    </button>;
+    </Button>;
   };
 
   const memberAccessButton = (userId: string) => {
