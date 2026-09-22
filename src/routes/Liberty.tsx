@@ -106,26 +106,46 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"users" | "upgrades">("users");
+  const [tab, setTab] = useState<"users" | "upgrades" | "chixids">("users");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
+  const [chixRequests, setChixRequests] = useState<ChixRequest[]>([]);
+  const [chixCode, setChixCode] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, setting] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
+      supabase.rpc("admin_list_chix_requests"),
+      supabase.from("app_settings").select("value").eq("key", "chix_id_code").maybeSingle(),
     ]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
+    if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
+    if (setting.data?.value) setChixCode(setting.data.value);
     if (userRows.error || requestRows.error) setMessage("Some records could not be loaded. Try refreshing.");
     setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const saveChixCode = async () => {
+    const value = chixCode.trim();
+    if (!value) return setMessage("Enter a Chix ID before saving.");
+    const { error } = await supabase.rpc("admin_set_setting", { _key: "chix_id_code", _value: value });
+    setMessage(error ? "The Chix ID could not be saved." : `Chix ID updated to ${value}.`);
+  };
+
+  const setChixRequestStatus = async (request: ChixRequest, status: string) => {
+    const { error } = await supabase.rpc("admin_set_chix_request_status", { _request_id: request.id, _status: status });
+    if (error) return setMessage("That Chix ID request could not be updated.");
+    setMessage(status === "approved" ? "Chix ID released to the member." : `Chix ID request ${status}.`);
+    void load();
+  };
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
