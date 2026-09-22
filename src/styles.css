@@ -229,6 +229,37 @@
 @utility chix-pulse { animation: chix-pulse 1.8s ease-in-out infinite; }
 @utility chix-bar { animation: chix-bar 1.3s ease-in-out infinite; }
 
+@keyframes success-pop {
+  0% { opacity: 0; transform: scale(.55); }
+  55% { opacity: 1; transform: scale(1.14); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes confetti-drop {
+  0% { opacity: 0; transform: translate3d(0, -40px, 0) rotate(0deg); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--confetti-drift, 20px), 260px, 0) rotate(var(--confetti-spin, 320deg)); }
+}
+@utility success-pop { animation: success-pop .7s cubic-bezier(.22,1,.36,1) both; }
+
+.confetti-bit {
+  position: absolute;
+  top: -20px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: confetti-drop 2.6s cubic-bezier(.2,.7,.35,1) both;
+}
+.confetti-1 { left: 6%; background: var(--leaf); animation-delay: 0s; --confetti-drift: 22px; --confetti-spin: 320deg; }
+.confetti-2 { left: 16%; background: var(--gold); animation-delay: .18s; --confetti-drift: -18px; --confetti-spin: -280deg; }
+.confetti-3 { left: 27%; background: var(--brand); animation-delay: .06s; --confetti-drift: 30px; --confetti-spin: 400deg; }
+.confetti-4 { left: 38%; background: var(--gold); animation-delay: .32s; --confetti-drift: -26px; --confetti-spin: -350deg; }
+.confetti-5 { left: 48%; background: var(--leaf); animation-delay: .12s; --confetti-drift: 18px; --confetti-spin: 300deg; }
+.confetti-6 { left: 58%; background: var(--brand); animation-delay: .42s; --confetti-drift: -30px; --confetti-spin: -420deg; }
+.confetti-7 { left: 68%; background: var(--gold); animation-delay: .22s; --confetti-drift: 26px; --confetti-spin: 360deg; }
+.confetti-8 { left: 78%; background: var(--leaf); animation-delay: .5s; --confetti-drift: -20px; --confetti-spin: -300deg; }
+.confetti-9 { left: 88%; background: var(--brand); animation-delay: .1s; --confetti-drift: 16px; --confetti-spin: 380deg; }
+.confetti-10 { left: 94%; background: var(--gold); animation-delay: .38s; --confetti-drift: -24px; --confetti-spin: -330deg; }
+
 .public-aura {
   background:
     radial-gradient(circle at 15% 10%, color-mix(in oklab, var(--leaf) 18%, transparent), transparent 34%),
@@ -236,5 +267,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .note-float, .note-float-two, .glow-breathe, .glass-sheen, .landing-enter, .auth-enter, .chix-orbit, .chix-pulse, .chix-bar, .cash-fall, .claim-pop { animation: none; }
+  .note-float, .note-float-two, .glow-breathe, .glass-sheen, .landing-enter, .auth-enter, .chix-orbit, .chix-pulse, .chix-bar, .cash-fall, .claim-pop, .success-pop, .confetti-bit { animation: none; }
 }
