@@ -106,7 +106,7 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"users" | "upgrades" | "chixids" | "support">("users");
+  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "support">("overview");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [chixRequests, setChixRequests] = useState<ChixRequest[]>([]);
@@ -119,21 +119,25 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [savingSupport, setSavingSupport] = useState(false);
   const [message, setMessage] = useState("");
   const [balances, setBalances] = useState<Record<string, number>>({});
+  const [withdrawalStats, setWithdrawalStats] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
+
 
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, settings, balanceRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
       supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url"]),
       supabase.rpc("admin_list_balances"),
+      supabase.from("withdrawals").select("amount"),
     ]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
     if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
     if (balanceRows.data) setBalances(Object.fromEntries((balanceRows.data as unknown as { user_id: string; balance: number }[]).map((row) => [row.user_id, Number(row.balance)])));
+    if (withdrawalRows.data) setWithdrawalStats({ count: withdrawalRows.data.length, amount: withdrawalRows.data.reduce((sum, row) => sum + Number(row.amount), 0) });
     for (const setting of settings.data ?? []) {
       if (setting.key === "chix_id_code") setChixCode(setting.value);
       if (setting.key === "support_email") setSupportEmail(setting.value);
