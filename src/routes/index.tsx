@@ -107,12 +107,6 @@ function ChixPay() {
     const email = form.email.trim().toLowerCase();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: form.password });
     setBusy(false);
-    if (error?.code === "email_not_confirmed") {
-      setForm((old) => ({ ...old, email }));
-      setNotice("Confirm your email before signing in. You can resend the confirmation below.");
-      setScreen("check-email");
-      return;
-    }
     if (error) return setNotice(error.message === "Invalid login credentials" ? "The email or password is incorrect. Please try again." : error.message);
     if (!data.user) return setNotice("We could not open your account. Please try again.");
     const meta = data.user.user_metadata as Partial<FormData>;
@@ -127,18 +121,17 @@ function ChixPay() {
   const finishSignup = async () => {
     setBusy(true); setNotice("");
     const email = form.email.trim().toLowerCase();
-    const { data, error } = await supabase.auth.signUp({ email, password: form.password, options: { emailRedirectTo: window.location.origin, data: { fullName: form.fullName, phone: form.phone, state: form.state } } });
+    const { data, error } = await supabase.auth.signUp({ email, password: form.password, options: { data: { fullName: form.fullName, phone: form.phone, state: form.state } } });
     if (error) { setBusy(false); return setNotice(error.message); }
-    if (data.session && data.user) await supabase.from("profiles").upsert({ id: data.user.id, full_name: form.fullName, phone: form.phone, state: form.state });
+    if (!data.session) {
+      const signIn = await supabase.auth.signInWithPassword({ email, password: form.password });
+      if (signIn.error) { setBusy(false); return setNotice(signIn.error.message); }
+    }
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData.user) await supabase.from("profiles").upsert({ id: userData.user.id, full_name: form.fullName, phone: form.phone, state: form.state });
     setBusy(false);
     setForm((old) => ({ ...old, email }));
-    setScreen(data.session ? "tutorial" : "check-email");
-  };
-  const resendConfirmation = async () => {
-    setBusy(true); setNotice("");
-    const { error } = await supabase.auth.resend({ type: "signup", email: form.email.trim().toLowerCase(), options: { emailRedirectTo: window.location.origin } });
-    setBusy(false);
-    setNotice(error ? error.message : "A new confirmation link has been sent. Please check your inbox and spam folder.");
+    setScreen("tutorial");
   };
   const googleLogin = async () => {
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
