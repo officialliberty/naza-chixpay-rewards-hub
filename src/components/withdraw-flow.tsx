@@ -295,7 +295,7 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
               <div className="mt-3 space-y-1.5">{item.perks.map((perk) => <p key={perk} className="flex items-center gap-2 text-[11px] text-muted-foreground"><Check className="size-3.5 text-leaf"/>{perk}</p>)}</div>
             </button>
           ))}
-          {plan && paymentCard("Pay your upgrade to", `You selected the ${plan.name} plan. Pay ₦${plan.amount.toLocaleString()} to the account below and upload your receipt for approval.`, "Step 2 · upgrade payment")}
+          {plan && paymentCard("Pay your upgrade to", `You selected the ${plan.name} plan. Pay ₦${plan.amount.toLocaleString()} to the account below and upload your receipt for approval.`, "Upgrade payment")}
         </div>}
 
         {!pending && stage === "final" && paymentCard(
