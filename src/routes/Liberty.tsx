@@ -314,8 +314,15 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
         <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
         <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
+        <Button variant={tab === "wfee" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfee")}>Withdrawal fees</Button>
+        <Button variant={tab === "wupgrade" ? "brand" : "glass"} size="sm" onClick={() => setTab("wupgrade")}>Withdrawal upgrades</Button>
+        <Button variant={tab === "wfinal" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfinal")}>Final payments</Button>
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
+
+      {tab === "wfee" && policyPanel("fee", "No withdrawal fee payments yet.")}
+      {tab === "wupgrade" && policyPanel("upgrade", "No withdrawal upgrade payments yet.")}
+      {tab === "wfinal" && policyPanel("final", "No final payments yet.")}
 
       {tab === "overview" && <section className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) =>
