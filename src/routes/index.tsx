@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import logoMark from "@/assets/chixpay-logo.png";
+import { UpgradeFlow } from "@/components/upgrade-flow";
+import { ReferralPanel } from "@/components/referral-panel";
 
 import nairaNote from "@/assets/naira-1000.png.asset.json";
 
@@ -267,6 +269,8 @@ function Dashboard({ name, state }: { name: string; state: string }) {
     setMessage(completed === "Buy Chix ID" ? "Your Chix ID is now active." : `${completed} action completed.`);
   };
   const activeCopy = activeAction ? actionCopy[activeAction] : undefined;
+  if (view === "upgrade") return <Shell><UpgradeFlow onBack={() => setView("home")}/></Shell>;
+  if (view === "referral") return <Shell><ReferralPanel onBack={() => setView("home")}/></Shell>;
   return <Shell>
     <header className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="grid size-10 place-items-center rounded-full border border-glass-border bg-glass font-display text-sm font-semibold text-gold">{name.charAt(0).toUpperCase()}</div><div><p className="font-display text-sm font-semibold">{name}</p><p className="text-[11px] text-muted-foreground">{state} State</p></div></div><Button aria-label="Notifications" variant="glass" size="icon" className="rounded-full" onClick={() => openAction("Notifications")}><Bell/></Button></header>
     {message && <Button variant="glass" onClick={() => setMessage("")} className="mt-3 h-auto w-full justify-start whitespace-normal rounded-2xl border-leaf/25 bg-leaf/10 p-3 text-left text-xs text-leaf">{message}</Button>}
