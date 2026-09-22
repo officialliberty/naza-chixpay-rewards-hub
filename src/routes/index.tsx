@@ -378,6 +378,10 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
     if (label === "Profile") return setView("profile");
     if (label === "Support") return setView("support");
     if (label === "Tasks") return setView("tasks");
+    if (label === "Notifications" && userId && unread > 0) {
+      void supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", userId).is("read_at", null)
+        .then(() => setNotifications((current) => current.map((item) => item.read_at ? item : { ...item, read_at: new Date().toISOString() })));
+    }
     setActiveAction(label);
   };
   const completeAction = () => {
