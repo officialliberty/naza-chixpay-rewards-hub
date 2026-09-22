@@ -137,6 +137,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [savingDirect, setSavingDirect] = useState(false);
   const [message, setMessage] = useState("");
   const [balances, setBalances] = useState<Record<string, number>>({});
+  const [receiptUrls, setReceiptUrls] = useState<Record<string, string>>({});
   const [withdrawalStats, setWithdrawalStats] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
 
 
@@ -158,6 +159,17 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
     if (balanceRows.data) setBalances(Object.fromEntries((balanceRows.data as unknown as { user_id: string; balance: number }[]).map((row) => [row.user_id, Number(row.balance)])));
     if (withdrawalRows.data) setWithdrawalStats({ count: withdrawalRows.data.length, amount: withdrawalRows.data.reduce((sum, row) => sum + Number(row.amount), 0) });
+    const receiptPaths = [
+      ...((requestRows.data ?? []) as unknown as AdminRequest[]),
+      ...((chixRows.data ?? []) as unknown as ChixRequest[]),
+      ...((policyRows.data ?? []) as unknown as WithdrawPayment[]),
+    ].map((row) => row.receipt_path).filter((path): path is string => Boolean(path));
+    if (receiptPaths.length > 0) {
+      const { data: signedReceipts } = await supabase.storage.from("upgrade-receipts").createSignedUrls(receiptPaths, 3600);
+      setReceiptUrls(Object.fromEntries((signedReceipts ?? []).flatMap((item) => item.signedUrl ? [[item.path, item.signedUrl]] : [])));
+    } else {
+      setReceiptUrls({});
+    }
     for (const setting of settings.data ?? []) {
       if (setting.key === "chix_id_code") setChixCode(setting.value);
       if (setting.key === "support_email") setSupportEmail(setting.value);
@@ -249,6 +261,25 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     window.open(data.signedUrl, "_blank", "noopener");
   };
 
+  const receiptPreview = (path: string | null) => {
+    if (!path) return <div className="mt-3 grid h-24 w-32 place-items-center rounded-xl border border-glass-border bg-background/45 text-[11px] text-muted-foreground">No receipt</div>;
+    const isPdf = path.toLowerCase().endsWith(".pdf");
+    return <button type="button" aria-label="Open uploaded receipt" onClick={() => void openPath(path)} className="mt-3 block h-24 w-32 overflow-hidden rounded-xl border border-glass-border bg-background/45">
+      {isPdf || !receiptUrls[path]
+        ? <span className="grid h-full place-items-center text-muted-foreground"><FileText className="size-6"/><span className="text-[10px]">Receipt file</span></span>
+        : <img src={receiptUrls[path]} alt="Uploaded payment receipt" className="h-full w-full object-cover"/>}
+    </button>;
+  };
+
+  const memberAccessButton = (userId: string) => {
+    const user = users.find((item) => item.id === userId);
+    if (!user) return null;
+    const isActive = (user.status ?? "active") === "active";
+    return isActive
+      ? <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setStatus(user, "restricted")}><Ban/> Ban account</Button>
+      : <Button variant="glass" size="sm" onClick={() => void setStatus(user, "active")}><CheckCircle2/> Restore access</Button>;
+  };
+
   const policyPanel = (kind: "fee" | "upgrade" | "final", empty: string) => <Panel className="mt-3">
     <div className="space-y-3">
       {loading && <p className="text-sm text-muted-foreground">Loading payments…</p>}
@@ -263,10 +294,12 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
           </div>
           <StatusPill status={row.status}/>
         </div>
+        {row.status === "pending" && receiptPreview(row.receipt_path)}
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="glass" size="sm" onClick={() => void openPath(row.receipt_path)}><Eye/> View receipt</Button>
           <Button variant="reward" size="sm" onClick={() => void setWithdrawPaymentStatus(row, "approved")}><CheckCircle2/> Approve</Button>
           <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setWithdrawPaymentStatus(row, "rejected")}><Ban/> Reject</Button>
+          {memberAccessButton(row.user_id)}
         </div>
       </div>)}
     </div>
@@ -438,10 +471,12 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
                 </div>
                 <StatusPill status={request.status}/>
               </div>
+              {request.status === "pending" && receiptPreview(request.receipt_path)}
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
                 <Button variant="reward" size="sm" onClick={() => void setChixRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
                 <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setChixRequestStatus(request, "rejected")}><Ban/> Reject</Button>
+                {memberAccessButton(request.user_id)}
               </div>
             </div>)}
           </div>
@@ -497,10 +532,12 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
               </div>
               <StatusPill status={request.status}/>
             </div>
+            {request.status === "pending" && receiptPreview(request.receipt_path)}
             <div className="mt-3 flex flex-wrap gap-2">
               <Button variant="glass" size="sm" onClick={() => void openReceipt(request)}><Eye/> View receipt</Button>
               <Button variant="reward" size="sm" onClick={() => void setRequestStatus(request, "approved")}><CheckCircle2/> Approve</Button>
               <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setRequestStatus(request, "rejected")}><Ban/> Reject</Button>
+              {memberAccessButton(request.user_id)}
             </div>
           </div>)}
         </div>
