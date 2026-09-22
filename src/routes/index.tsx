@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowDownToLine, BadgeCheck, Bell, ChevronRight, Clock3,
   Check, Copy, Eye, EyeOff, Headphones, History, IdCard, LockKeyhole,
@@ -184,7 +184,7 @@ function ChixPay() {
 
   if (restriction) return <RestrictedScreen reason={restriction.reason} onLogout={logout}/>;
 
-  if (screen === "dashboard") return <Dashboard name={form.fullName || "ChixPay member"} state={form.state || "Lagos"} onRestricted={(reason) => setRestriction({ reason })} onLogout={logout} />;
+  if (screen === "dashboard") return <Dashboard name={form.fullName || "ChixPay member"} state={form.state || "Lagos"} onRestricted={markRestricted} onLogout={logout} />;
 
   return <PublicShell>
     <header className="flex items-center justify-between"><Brand/><div className="flex items-center gap-2">{screen === "landing" ? <Button variant="glass" size="sm" onClick={() => { setMode("login"); setScreen("auth"); }}>Log in</Button> : <Button variant="glass" size="sm" onClick={() => setScreen("landing")}>Back</Button>}</div></header>
