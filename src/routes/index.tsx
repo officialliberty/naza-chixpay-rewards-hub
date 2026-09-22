@@ -40,7 +40,7 @@ function MoneyBackdrop() {
     <div className="absolute top-1/4 -right-20 h-72 w-72 rounded-full bg-brand/25 blur-3xl" />
     <div className="absolute bottom-0 -left-24 h-72 w-72 rounded-full bg-gold/15 blur-3xl" />
     {["top-[14%] left-[4%] note-float","top-[38%] right-[4%] note-float-two","bottom-[18%] left-[8%] note-float","bottom-[7%] right-[12%] note-float-two"].map((pos) =>
-      <div key={pos} className={`absolute ${pos} h-10 w-20 overflow-hidden rounded-md border border-glass-border opacity-55 shadow-brand`}><img src={nairaNote.url} alt="" className="h-full w-full object-cover" /></div>
+      <div key={pos} className={`absolute ${pos} h-10 w-20 overflow-hidden rounded-md border border-glass-border opacity-55 shadow-brand`}><img src={nairaNote} alt="" className="h-full w-full object-cover" /></div>
     )}
   </div>;
 }
@@ -53,7 +53,7 @@ function CashFall({ burst }: { burst: number }) {
   if (burst === 0) return null;
   const paths = ["cash-path-1", "cash-path-2", "cash-path-3", "cash-path-4", "cash-path-5", "cash-path-6", "cash-path-7", "cash-path-8", "cash-path-9", "cash-path-10", "cash-path-11", "cash-path-12"];
   return <div key={burst} className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
-    {paths.map((path, index) => <img key={path} src={nairaNote.url} alt="" className={`cash-fall absolute top-[-70px] h-9 w-[72px] rounded-sm object-cover shadow-brand ${path}`} />)}
+    {paths.map((path, index) => <img key={path} src={nairaNote} alt="" className={`cash-fall absolute top-[-70px] h-9 w-[72px] rounded-sm object-cover shadow-brand ${path}`} />)}
     <div className="claim-pop absolute left-1/2 top-[42%] -translate-x-1/2 rounded-full border border-gold/35 bg-background/85 px-5 py-3 font-display text-lg font-semibold text-gold shadow-reward backdrop-blur-xl">+₦35,000</div>
   </div>;
 }
