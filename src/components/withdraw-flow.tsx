@@ -157,7 +157,7 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
       amount: stageAmount, receipt_path: path,
     });
     setBusy(false);
-    if (error) return setNotice("That receipt could not be submitted. Please try again.");
+    if (error) return setNotice(error.message.includes("pending_payment_exists") ? "You already have a payment awaiting approval. Please wait until it is approved before sending another one." : "That receipt could not be submitted. Please try again.");
     setFile(null);
     await refresh();
   };

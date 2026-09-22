@@ -115,7 +115,7 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
       user_id: user.id, full_name: fullName.trim(), plan_name: plan.name, amount: plan.amount, uses_total: plan.uses, receipt_path: path,
     });
     setBusy(false);
-    if (error) return setNotice(error.message);
+    if (error) return setNotice(error.message.includes("pending_payment_exists") ? "You already have a payment awaiting approval. Please wait until it is approved before sending another one." : error.message);
     setStep("pending");
   };
 
