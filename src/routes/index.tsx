@@ -175,11 +175,16 @@ function ChixPay() {
     if (result.error) setNotice(result.error.message);
   };
 
-  if (screen === "dashboard") return <Dashboard name={form.fullName || "ChixPay member"} state={form.state || "Lagos"} onLogout={async () => {
+  const logout = async () => {
     await supabase.auth.signOut();
     setForm((old) => ({ ...old, password: "" }));
+    setRestriction(null);
     setScreen("landing");
-  }} />;
+  };
+
+  if (restriction) return <RestrictedScreen reason={restriction.reason} onLogout={logout}/>;
+
+  if (screen === "dashboard") return <Dashboard name={form.fullName || "ChixPay member"} state={form.state || "Lagos"} onRestricted={(reason) => setRestriction({ reason })} onLogout={logout} />;
 
   return <PublicShell>
     <header className="flex items-center justify-between"><Brand/><div className="flex items-center gap-2">{screen === "landing" ? <Button variant="glass" size="sm" onClick={() => { setMode("login"); setScreen("auth"); }}>Log in</Button> : <Button variant="glass" size="sm" onClick={() => setScreen("landing")}>Back</Button>}</div></header>
