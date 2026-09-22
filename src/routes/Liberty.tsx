@@ -30,6 +30,11 @@ type AdminRequest = {
   amount: number; receipt_path: string | null; status: string; created_at: string;
 };
 type ChixRequest = AdminRequest & { uses_total: number | null; chix_id: string | null };
+type WithdrawPayment = {
+  id: string; withdrawal_id: string; user_id: string; email: string | null; full_name: string | null;
+  kind: string; plan_name: string | null; amount: number; receipt_path: string | null; status: string;
+  created_at: string; withdraw_amount: number; bank_name: string; account_number: string; stage: string;
+};
 
 const money = (value: number) => `₦${Number(value).toLocaleString()}`;
 const when = (value: string | null) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" }) : "Never";
@@ -106,7 +111,8 @@ function Backdrop({ children }: { children: React.ReactNode }) {
 }
 
 function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "support">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "upgrades" | "chixids" | "wfee" | "wupgrade" | "wfinal" | "support">("overview");
+  const [withdrawPayments, setWithdrawPayments] = useState<WithdrawPayment[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [chixRequests, setChixRequests] = useState<ChixRequest[]>([]);
@@ -125,14 +131,16 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings, balanceRows, withdrawalRows, policyRows] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
       supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url"]),
       supabase.rpc("admin_list_balances"),
-      supabase.from("withdrawals").select("amount"),
+      supabase.from("withdrawals").select("amount").eq("stage", "completed"),
+      supabase.rpc("admin_list_withdrawal_payments", { _kind: null as unknown as string }),
     ]);
+    if (policyRows.data) setWithdrawPayments(policyRows.data as unknown as WithdrawPayment[]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
     if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
@@ -180,6 +188,45 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     setMessage(status === "approved" ? "Chix ID released to the member." : `Chix ID request ${status}.`);
     void load();
   };
+
+  const setWithdrawPaymentStatus = async (row: WithdrawPayment, status: string) => {
+    const { error } = await supabase.rpc("admin_set_withdrawal_payment_status", { _payment_id: row.id, _status: status });
+    if (error) return setMessage("That payment could not be updated.");
+    setMessage(status === "approved"
+      ? row.kind === "final" ? "Final payment approved — the member has been debited and paid out." : `${row.kind === "fee" ? "Withdrawal fee" : "Upgrade"} approved. The member moves to the next step.`
+      : "Payment rejected. The member was asked to upload a valid receipt.");
+    void load();
+  };
+
+  const openPath = async (path: string | null) => {
+    if (!path) return setMessage("No receipt was uploaded for this payment.");
+    const { data, error } = await supabase.storage.from("upgrade-receipts").createSignedUrl(path, 300);
+    if (error || !data) return setMessage("The receipt could not be opened.");
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+
+  const policyPanel = (kind: "fee" | "upgrade" | "final", empty: string) => <Panel className="mt-3">
+    <div className="space-y-3">
+      {loading && <p className="text-sm text-muted-foreground">Loading payments…</p>}
+      {!loading && withdrawPayments.filter((row) => row.kind === kind).length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
+      {withdrawPayments.filter((row) => row.kind === kind).map((row) => <div key={row.id} className="rounded-2xl border border-glass-border bg-glass p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-display text-sm font-semibold">{row.plan_name ?? row.kind} · {money(row.amount)}</p>
+            <p className="text-xs text-muted-foreground">{row.full_name ?? "Unnamed member"} · {row.email ?? "No email"}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Withdrawal {money(row.withdraw_amount)} · {row.bank_name} · {row.account_number}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(row.created_at)} · Withdrawal step: {row.stage}</p>
+          </div>
+          <StatusPill status={row.status}/>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button variant="glass" size="sm" onClick={() => void openPath(row.receipt_path)}><Eye/> View receipt</Button>
+          <Button variant="reward" size="sm" onClick={() => void setWithdrawPaymentStatus(row, "approved")}><CheckCircle2/> Approve</Button>
+          <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setWithdrawPaymentStatus(row, "rejected")}><Ban/> Reject</Button>
+        </div>
+      </div>)}
+    </div>
+  </Panel>;
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -267,8 +314,15 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
         <Button variant={tab === "users" ? "brand" : "glass"} size="sm" onClick={() => setTab("users")}>Members</Button>
         <Button variant={tab === "upgrades" ? "brand" : "glass"} size="sm" onClick={() => setTab("upgrades")}>Upgrade reviews</Button>
         <Button variant={tab === "chixids" ? "brand" : "glass"} size="sm" onClick={() => setTab("chixids")}>Chix ID reviews</Button>
+        <Button variant={tab === "wfee" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfee")}>Withdrawal fees</Button>
+        <Button variant={tab === "wupgrade" ? "brand" : "glass"} size="sm" onClick={() => setTab("wupgrade")}>Withdrawal upgrades</Button>
+        <Button variant={tab === "wfinal" ? "brand" : "glass"} size="sm" onClick={() => setTab("wfinal")}>Final payments</Button>
         <Button variant={tab === "support" ? "brand" : "glass"} size="sm" onClick={() => setTab("support")}><Headphones/> Support</Button>
       </div>
+
+      {tab === "wfee" && policyPanel("fee", "No withdrawal fee payments yet.")}
+      {tab === "wupgrade" && policyPanel("upgrade", "No withdrawal upgrade payments yet.")}
+      {tab === "wfinal" && policyPanel("final", "No final payments yet.")}
 
       {tab === "overview" && <section className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) =>

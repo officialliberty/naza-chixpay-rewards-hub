@@ -303,7 +303,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
       setUserId(id);
       const [claims, payouts, key, profile, tasks, extras, alerts] = await Promise.all([
         supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false }),
-        supabase.from("withdrawals").select("amount").eq("user_id", id),
+        supabase.from("withdrawals").select("amount").eq("user_id", id).eq("stage", "completed"),
         supabase.from("chix_keys").select("uses_left, unlimited").eq("user_id", id).maybeSingle(),
         supabase.from("profiles").select("avatar_path, status, restriction_reason").eq("id", id).maybeSingle(),
         supabase.from("task_completions").select("amount").eq("user_id", id),

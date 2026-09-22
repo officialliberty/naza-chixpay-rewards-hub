@@ -16,7 +16,7 @@ export const upgradePlans: UpgradePlan[] = [
   { name: "Diamond", amount: 100000, tag: "Maximum", perks: ["Unlimited withdrawal review", "Highest referral tier"] },
 ];
 
-const payment = { bank: "ChixPay Collections (Demo)", accountName: "ChixPay Technologies Ltd", accountNumber: "0000000000" };
+export const payment = { bank: "ChixPay Collections (Demo)", accountName: "ChixPay Technologies Ltd", accountNumber: "0000000000" };
 
 type Step = "select" | "loading" | "confirm" | "loading2" | "payment" | "pending";
 
