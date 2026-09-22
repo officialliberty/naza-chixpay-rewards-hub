@@ -73,6 +73,7 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
 
   useEffect(() => {
     void (async () => {
+      await supabase.rpc("settle_direct_withdrawals");
       const found = await refresh();
       if (found) setStep("policy");
       setBooting(false);
