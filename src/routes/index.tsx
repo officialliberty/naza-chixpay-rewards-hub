@@ -240,6 +240,7 @@ function Dashboard({ name, state }: { name: string; state: string }) {
   const [seconds, setSeconds] = useState(0); const [balance, setBalance] = useState(170000); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [chixIdActive, setChixIdActive] = useState(false);
+  const [view, setView] = useState<"home" | "upgrade" | "referral">("home");
   useEffect(() => {
     const updateCountdown = () => setSeconds(Math.max(0, Math.ceil((nextClaimAt - Date.now()) / 1000)));
     updateCountdown();
@@ -248,7 +249,11 @@ function Dashboard({ name, state }: { name: string; state: string }) {
   }, [nextClaimAt]);
   const clock = useMemo(() => `${String(Math.floor(seconds / 60)).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`, [seconds]);
   const claimReady = seconds === 0;
-  const openAction = (label: string) => setActiveAction(label);
+  const openAction = (label: string) => {
+    if (label === "Upgrade") return setView("upgrade");
+    if (label === "Referral") return setView("referral");
+    setActiveAction(label);
+  };
   const completeAction = () => {
     if (!activeAction) return;
     if (activeAction === "Withdraw" && !chixIdActive) {
