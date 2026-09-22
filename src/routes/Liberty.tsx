@@ -281,6 +281,10 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
 
   const restricted = users.filter((user) => (user.status ?? "active") !== "active").length;
   const pending = requests.filter((request) => request.status === "pending").length;
+  const pendingChix = chixRequests.filter((request) => request.status === "pending").length;
+  const pendingFee = withdrawPayments.filter((row) => row.kind === "fee" && row.status === "pending").length;
+  const pendingWUpgrade = withdrawPayments.filter((row) => row.kind === "upgrade" && row.status === "pending").length;
+  const pendingFinal = withdrawPayments.filter((row) => row.kind === "final" && row.status === "pending").length;
   const totalBalance = Object.values(balances).reduce((sum, value) => sum + value, 0);
   const totalReferrals = users.reduce((sum, user) => sum + user.referral_count, 0);
   const approvedPayments = requests.filter((r) => r.status === "approved").length + chixRequests.filter((r) => r.status === "approved").length;
