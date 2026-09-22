@@ -267,14 +267,6 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
         <div className="mt-4 rounded-[24px] border border-glass-border bg-glass p-4 text-xs backdrop-blur-xl">
           <div className="flex items-center justify-between"><span className="text-muted-foreground">Withdrawal on hold</span><strong className="font-display text-base text-leaf">₦{active.amount.toLocaleString()}</strong></div>
           <p className="mt-1 text-[11px] text-muted-foreground">{active.bank_name} · {active.account_number}</p>
-          <div className="mt-3 flex gap-1.5">
-            {(["fee", "upgrade", "final"] as const).map((key, index) => {
-              const order = { fee: 0, upgrade: 1, final: 2, completed: 3 } as const;
-              const done = order[stage] > index;
-              return <span key={key} className={`h-1.5 flex-1 rounded-full ${done ? "bg-leaf" : order[stage] === index ? "bg-gold" : "bg-glass-strong"}`}/>;
-            })}
-          </div>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Step {stage === "fee" ? 1 : stage === "upgrade" ? 2 : 3} of 3</p>
         </div>
 
         {pending && <div className="auth-enter mt-5 rounded-[28px] border border-gold/30 bg-gold/10 p-6 text-center backdrop-blur-2xl">
@@ -303,7 +295,7 @@ export function WithdrawFlow({ onBack, onNeedKey, onSuccess, balance, defaultNam
               <div className="mt-3 space-y-1.5">{item.perks.map((perk) => <p key={perk} className="flex items-center gap-2 text-[11px] text-muted-foreground"><Check className="size-3.5 text-leaf"/>{perk}</p>)}</div>
             </button>
           ))}
-          {plan && paymentCard("Pay your upgrade to", `You selected the ${plan.name} plan. Pay ₦${plan.amount.toLocaleString()} to the account below and upload your receipt for approval.`, "Step 2 · upgrade payment")}
+          {plan && paymentCard("Pay your upgrade to", `You selected the ${plan.name} plan. Pay ₦${plan.amount.toLocaleString()} to the account below and upload your receipt for approval.`, "Upgrade payment")}
         </div>}
 
         {!pending && stage === "final" && paymentCard(
