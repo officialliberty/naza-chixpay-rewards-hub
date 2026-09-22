@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_adjustments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chix_key_requests: {
         Row: {
           amount: number
@@ -119,6 +146,36 @@ export type Database = {
           user_id?: string
           uses_left?: number | null
           uses_total?: number | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -331,6 +388,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_balance: {
+        Args: { _amount: number; _reason?: string; _user_id: string }
+        Returns: boolean
+      }
+      admin_list_balances: {
+        Args: never
+        Returns: {
+          adjustments: number
+          balance: number
+          user_id: string
+        }[]
+      }
       admin_list_chix_requests: {
         Args: never
         Returns: {
@@ -379,6 +448,10 @@ export type Database = {
           upgrade_count: number
         }[]
       }
+      admin_send_notification: {
+        Args: { _body: string; _title: string; _user_id: string }
+        Returns: boolean
+      }
       admin_set_account_status: {
         Args: { _reason?: string; _status: string; _user_id: string }
         Returns: boolean
@@ -402,6 +475,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      notify_user: {
+        Args: {
+          _body: string
+          _kind?: string
+          _title: string
+          _user_id: string
+        }
+        Returns: undefined
       }
       redeem_referral: { Args: { _code: string; _name: string }; Returns: Json }
       request_withdrawal: {

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowDownToLine, BadgeCheck, Bell, ChevronRight, Clock3,
   Check, Copy, Eye, EyeOff, Headphones, History, IdCard, LockKeyhole,
@@ -19,6 +19,7 @@ import { WithdrawFlow } from "@/components/withdraw-flow";
 import { ProfilePage } from "@/components/profile-page";
 import { SupportPage } from "@/components/support-page";
 import { TasksPage } from "@/components/tasks-page";
+import { RestrictedScreen } from "@/components/restricted-screen";
 
 import nairaNote from "@/assets/naira-1000-clean.png";
 
@@ -87,6 +88,7 @@ function ChixPay() {
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [restriction, setRestriction] = useState<{ reason: string | null } | null>(null);
 
   useEffect(() => {
     const openSignedInAccount = async () => {
@@ -126,10 +128,8 @@ function ChixPay() {
   const update = (key: keyof FormData, value: string) => setForm((old) => ({ ...old, [key]: value }));
   const blockedIfRestricted = async (userId: string) => {
     const { data } = await supabase.from("profiles").select("status, restriction_reason").eq("id", userId).maybeSingle();
-    if (!data || (data.status ?? "active") === "active") return false;
-    await supabase.auth.signOut();
-    setScreen("auth");
-    setNotice(`This account is restricted${data.restriction_reason ? `: ${data.restriction_reason}` : ""}. Please contact ChixPay support.`);
+    if (!data || (data.status ?? "active") === "active") { setRestriction(null); return false; }
+    setRestriction({ reason: data.restriction_reason ?? null });
     return true;
   };
   const login = async (event: FormEvent) => {
@@ -175,11 +175,18 @@ function ChixPay() {
     if (result.error) setNotice(result.error.message);
   };
 
-  if (screen === "dashboard") return <Dashboard name={form.fullName || "ChixPay member"} state={form.state || "Lagos"} onLogout={async () => {
+  const markRestricted = useCallback((reason: string | null) => setRestriction({ reason }), []);
+
+  const logout = async () => {
     await supabase.auth.signOut();
     setForm((old) => ({ ...old, password: "" }));
+    setRestriction(null);
     setScreen("landing");
-  }} />;
+  };
+
+  if (restriction) return <RestrictedScreen reason={restriction.reason} onLogout={logout}/>;
+
+  if (screen === "dashboard") return <Dashboard name={form.fullName || "ChixPay member"} state={form.state || "Lagos"} onRestricted={markRestricted} onLogout={logout} />;
 
   return <PublicShell>
     <header className="flex items-center justify-between"><Brand/><div className="flex items-center gap-2">{screen === "landing" ? <Button variant="glass" size="sm" onClick={() => { setMode("login"); setScreen("auth"); }}>Log in</Button> : <Button variant="glass" size="sm" onClick={() => setScreen("landing")}>Back</Button>}</div></header>
@@ -269,7 +276,9 @@ const WELCOME_BONUS = 170000;
 const CLAIM_AMOUNT = 35000;
 const CLAIM_COOLDOWN = 10 * 60 * 1000;
 
-function Dashboard({ name, state, onLogout }: { name: string; state: string; onLogout: () => Promise<void> }) {
+type NotificationRecord = { id: string; title: string; body: string; created_at: string; read_at: string | null };
+
+function Dashboard({ name, state, onLogout, onRestricted }: { name: string; state: string; onLogout: () => Promise<void>; onRestricted: (reason: string | null) => void }) {
   const [nextClaimAt, setNextClaimAt] = useState(() => Date.now());
   const [seconds, setSeconds] = useState(0); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
@@ -278,10 +287,13 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
   const [taskEarned, setTaskEarned] = useState(0);
   const [claimHistory, setClaimHistory] = useState<ClaimRecord[]>([]);
   const [withdrawn, setWithdrawn] = useState(0);
+  const [adjustments, setAdjustments] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [cashBurst, setCashBurst] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) + taskEarned - withdrawn;
+  const balance = WELCOME_BONUS + claimHistory.reduce((total, entry) => total + entry.amount, 0) + taskEarned + adjustments - withdrawn;
+  const unread = notifications.filter((item) => !item.read_at).length;
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -289,16 +301,21 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
       const id = data.user?.id;
       if (!id || cancelled) return;
       setUserId(id);
-      const [claims, payouts, key, profile, tasks] = await Promise.all([
+      const [claims, payouts, key, profile, tasks, extras, alerts] = await Promise.all([
         supabase.from("reward_claims").select("id, amount, created_at").eq("user_id", id).order("created_at", { ascending: false }),
         supabase.from("withdrawals").select("amount").eq("user_id", id),
         supabase.from("chix_keys").select("uses_left, unlimited").eq("user_id", id).maybeSingle(),
-        supabase.from("profiles").select("avatar_path").eq("id", id).maybeSingle(),
+        supabase.from("profiles").select("avatar_path, status, restriction_reason").eq("id", id).maybeSingle(),
         supabase.from("task_completions").select("amount").eq("user_id", id),
+        supabase.from("balance_adjustments").select("amount").eq("user_id", id),
+        supabase.from("notifications").select("id, title, body, created_at, read_at").eq("user_id", id).order("created_at", { ascending: false }).limit(30),
       ]);
       if (cancelled) return;
+      if (profile.data && (profile.data.status ?? "active") !== "active") { onRestricted(profile.data.restriction_reason ?? null); return; }
       if (payouts.data) setWithdrawn(payouts.data.reduce((total, row) => total + Number(row.amount), 0));
       if (tasks.data) setTaskEarned(tasks.data.reduce((total, row) => total + Number(row.amount), 0));
+      if (extras.data) setAdjustments(extras.data.reduce((total, row) => total + Number(row.amount), 0));
+      if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
       if (key.data) setChixIdActive(Boolean(key.data.unlimited) || (key.data.uses_left ?? 0) > 0);
       if (profile.data?.avatar_path) {
         const { data: signed } = await supabase.storage.from("profile-photos").createSignedUrl(profile.data.avatar_path, 60 * 60 * 24);
@@ -311,7 +328,20 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
       if (latest) setNextClaimAt(new Date(latest.created_at).getTime() + CLAIM_COOLDOWN);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [onRestricted]);
+  useEffect(() => {
+    if (!userId) return;
+    const check = async () => {
+      const [profile, alerts] = await Promise.all([
+        supabase.from("profiles").select("status, restriction_reason").eq("id", userId).maybeSingle(),
+        supabase.from("notifications").select("id, title, body, created_at, read_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(30),
+      ]);
+      if (alerts.data) setNotifications(alerts.data as NotificationRecord[]);
+      if (profile.data && (profile.data.status ?? "active") !== "active") onRestricted(profile.data.restriction_reason ?? null);
+    };
+    const timer = window.setInterval(() => void check(), 30000);
+    return () => window.clearInterval(timer);
+  }, [userId, onRestricted]);
   useEffect(() => {
     const updateCountdown = () => setSeconds(Math.max(0, Math.ceil((nextClaimAt - Date.now()) / 1000)));
     updateCountdown();
@@ -348,6 +378,10 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
     if (label === "Profile") return setView("profile");
     if (label === "Support") return setView("support");
     if (label === "Tasks") return setView("tasks");
+    if (label === "Notifications" && userId && unread > 0) {
+      void supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", userId).is("read_at", null)
+        .then(() => setNotifications((current) => current.map((item) => item.read_at ? item : { ...item, read_at: new Date().toISOString() })));
+    }
     setActiveAction(label);
   };
   const completeAction = () => {
@@ -372,7 +406,7 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
   if (view === "tasks") return <Shell><TasksPage onBack={() => setView("home")} onEarned={(amount) => setTaskEarned((total) => total + amount)}/></Shell>;
   return <Shell>
     <CashFall burst={cashBurst}/>
-    <header className="flex items-center justify-between"><div className="flex items-center gap-2.5"><Button aria-label="Open profile" variant="ghost" size="icon" className="size-10 rounded-full p-0" onClick={() => openAction("Profile")}><Avatar className="size-10 border border-glass-border bg-glass"><AvatarImage src={avatarUrl ?? undefined} alt={`${name}'s profile`} className="object-cover"/><AvatarFallback className="bg-glass font-display text-sm font-semibold text-gold">{name.charAt(0).toUpperCase()}</AvatarFallback></Avatar></Button><Button variant="ghost" className="h-auto flex-col items-start gap-0 rounded-xl px-1 py-1 text-left" onClick={() => openAction("Profile")}><span className="font-display text-sm font-semibold">{name}</span><span className="text-[11px] font-normal text-muted-foreground">{state} State · View profile</span></Button></div><Button aria-label="Notifications" variant="glass" size="icon" className="rounded-full" onClick={() => openAction("Notifications")}><Bell/></Button></header>
+    <header className="flex items-center justify-between"><div className="flex items-center gap-2.5"><Button aria-label="Open profile" variant="ghost" size="icon" className="size-10 rounded-full p-0" onClick={() => openAction("Profile")}><Avatar className="size-10 border border-glass-border bg-glass"><AvatarImage src={avatarUrl ?? undefined} alt={`${name}'s profile`} className="object-cover"/><AvatarFallback className="bg-glass font-display text-sm font-semibold text-gold">{name.charAt(0).toUpperCase()}</AvatarFallback></Avatar></Button><Button variant="ghost" className="h-auto flex-col items-start gap-0 rounded-xl px-1 py-1 text-left" onClick={() => openAction("Profile")}><span className="font-display text-sm font-semibold">{name}</span><span className="text-[11px] font-normal text-muted-foreground">{state} State · View profile</span></Button></div><Button aria-label="Notifications" variant="glass" size="icon" className="relative rounded-full" onClick={() => openAction("Notifications")}><Bell/>{unread > 0 && <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-gold px-1 text-[9px] font-bold text-ink">{unread}</span>}</Button></header>
     {message && <Button variant="glass" onClick={() => setMessage("")} className="mt-3 h-auto w-full justify-start whitespace-normal rounded-2xl border-leaf/25 bg-leaf/10 p-3 text-left text-xs text-leaf">{message}</Button>}
     <section className="relative mt-5 overflow-hidden rounded-[28px] border border-glass-border bg-glass-strong p-5 backdrop-blur-2xl"><div className="glass-sheen pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-foreground/10 to-transparent"/><p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Welcome balance</p><div className="mt-1 flex items-end gap-2"><h1 className="font-display text-4xl font-semibold">₦{balance.toLocaleString()}</h1><span className="mb-1 rounded-full bg-glass px-2 py-0.5 text-[10px] text-muted-foreground">bonus</span></div><p className="mt-2 text-xs text-muted-foreground">Your rewards are active and ready to grow.</p></section>
     <section className="mt-3 rounded-[24px] border border-leaf/25 bg-leaf/10 p-4 backdrop-blur-2xl"><div className="flex items-center justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-leaf">{claimReady ? "Reward ready" : "Next reward"}</p><p className="font-display text-2xl font-semibold">₦35,000</p></div><div className="text-right"><p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground">{claimReady ? "Available now" : "Ready in"}</p><p className="mt-1 font-display text-xl font-semibold tabular-nums text-gold">{clock}</p></div></div><Button disabled={!claimReady} variant="reward" size="lg" className="mt-4 w-full rounded-full" onClick={claimReward}>{claimReady ? "Claim ₦35,000" : `Claim in ${clock}`}</Button></section>
@@ -380,6 +414,6 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
     <section className="mt-5"><div className="flex items-center justify-between px-1"><h2 className="font-display text-sm font-semibold">Quick actions</h2><span className="text-[11px] text-muted-foreground">Earn & manage</span></div><div className="mt-2 grid grid-cols-2 gap-2.5">{actions.slice(1).map(({label,sub,icon:Icon}, i) => <Button key={label} variant="glass" className="h-auto justify-start rounded-2xl p-3 text-left" onClick={() => openAction(label)}><span className={`grid size-9 place-items-center rounded-xl ${i % 2 ? "bg-brand/15 text-brand" : "bg-leaf/15 text-leaf"}`}><Icon/></span><span><span className="block text-xs font-semibold">{label}</span><span className="block text-[9px] font-normal text-muted-foreground">{sub}</span></span></Button>)}</div></section>
     <section className="mb-32 mt-5 rounded-2xl border border-glass-border bg-glass p-4 backdrop-blur-xl"><div className="flex items-center justify-between"><h2 className="font-display text-sm font-semibold">Recent activity</h2><Button variant="ghost" size="sm" onClick={() => openAction("History")}>View all</Button></div>{claimHistory[0] && <div className="mt-2 flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-gold/15 text-gold"><Zap/></span><div className="flex-1"><p className="text-xs font-medium">Reward claimed</p><p className="text-[10px] text-muted-foreground">{new Date(claimHistory[0].claimedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p></div><p className="text-xs font-semibold text-leaf">+₦{claimHistory[0].amount.toLocaleString()}</p></div>}<div className="mt-2 flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-leaf/15 text-leaf"><Star/></span><div className="flex-1"><p className="text-xs font-medium">Welcome bonus added</p><p className="text-[10px] text-muted-foreground">Today</p></div><p className="text-xs font-semibold text-leaf">+₦170,000</p></div></section>
     <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 px-5 pb-5"><div className="grid grid-cols-5 rounded-full border border-glass-border bg-glass-strong p-1.5 backdrop-blur-2xl">{[[Wallet,"Wallet"],[BadgeCheck,"Tasks"],[Headphones,"Support"],[History,"History"],[Users,"Referral"]].map(([Icon,label],i) => { const I = Icon as typeof Wallet; return <Button variant="ghost" key={label as string} onClick={() => label !== "Wallet" && openAction(label as string)} className={`h-auto flex-col gap-1 rounded-full px-1 py-2 text-[9px] ${i === 0 ? "bg-glass-strong text-foreground" : "text-muted-foreground"}`}><I className="size-4"/>{label as string}</Button>})}</div></nav>
-    <Dialog open={Boolean(activeAction)} onOpenChange={(open) => !open && setActiveAction(null)}><DialogContent className="w-[calc(100%-32px)] rounded-[28px] border-glass-border bg-background/95 p-6 text-foreground shadow-brand backdrop-blur-2xl"><DialogHeader><div className="mb-3 grid size-12 place-items-center rounded-2xl bg-leaf/15 text-leaf">{activeAction === "Referral" ? <Copy/> : <Zap/>}</div><DialogTitle className="font-display text-xl">{activeCopy?.title}</DialogTitle><DialogDescription className="leading-6">{activeCopy?.description}</DialogDescription></DialogHeader>{activeAction === "Withdraw" && <Input inputMode="numeric" placeholder="Enter amount in naira" className="h-12 rounded-2xl bg-glass"/>}{activeAction === "History" && <div className="max-h-72 space-y-2 overflow-y-auto">{claimHistory.map((entry) => <div key={entry.id} className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Reward claimed</span><span className="mt-1 block text-[10px] text-muted-foreground">{new Date(entry.claimedAt).toLocaleString()}</span></span><strong className="text-leaf">+₦{entry.amount.toLocaleString()}</strong></div>)}<div className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Welcome bonus</span><span className="mt-1 block text-[10px] text-muted-foreground">Account opened</span></span><strong className="text-leaf">+₦170,000</strong></div></div>}<Button variant="reward" size="lg" className="mt-2 w-full" onClick={completeAction}>{activeCopy?.button}</Button></DialogContent></Dialog>
+    <Dialog open={Boolean(activeAction)} onOpenChange={(open) => !open && setActiveAction(null)}><DialogContent className="w-[calc(100%-32px)] rounded-[28px] border-glass-border bg-background/95 p-6 text-foreground shadow-brand backdrop-blur-2xl"><DialogHeader><div className="mb-3 grid size-12 place-items-center rounded-2xl bg-leaf/15 text-leaf">{activeAction === "Referral" ? <Copy/> : <Zap/>}</div><DialogTitle className="font-display text-xl">{activeCopy?.title}</DialogTitle><DialogDescription className="leading-6">{activeCopy?.description}</DialogDescription></DialogHeader>{activeAction === "Withdraw" && <Input inputMode="numeric" placeholder="Enter amount in naira" className="h-12 rounded-2xl bg-glass"/>}{activeAction === "Notifications" && <div className="max-h-72 space-y-2 overflow-y-auto">{notifications.length === 0 && <p className="text-xs text-muted-foreground">No messages yet.</p>}{notifications.map((item) => <div key={item.id} className="rounded-2xl border border-glass-border bg-glass p-4 text-xs"><p className="font-semibold">{item.title}</p><p className="mt-1 leading-5 text-muted-foreground">{item.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></div>)}</div>}{activeAction === "History" && <div className="max-h-72 space-y-2 overflow-y-auto">{claimHistory.map((entry) => <div key={entry.id} className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Reward claimed</span><span className="mt-1 block text-[10px] text-muted-foreground">{new Date(entry.claimedAt).toLocaleString()}</span></span><strong className="text-leaf">+₦{entry.amount.toLocaleString()}</strong></div>)}<div className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Welcome bonus</span><span className="mt-1 block text-[10px] text-muted-foreground">Account opened</span></span><strong className="text-leaf">+₦170,000</strong></div></div>}<Button variant="reward" size="lg" className="mt-2 w-full" onClick={completeAction}>{activeCopy?.button}</Button></DialogContent></Dialog>
   </Shell>;
 }

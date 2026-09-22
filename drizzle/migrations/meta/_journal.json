@@ -64,6 +64,13 @@
       "when": 1790086585950,
       "tag": "0008_daily_task_completions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790087071010,
+      "tag": "0009_notifications_and_balance_controls",
+      "breakpoints": true
     }
   ]
 }

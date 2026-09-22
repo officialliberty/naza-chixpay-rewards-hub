@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Ban, CheckCircle2, Eye, FileText, Headphones, LogOut, RefreshCw, Save, Search, ShieldCheck, Users } from "lucide-react";
+import { Ban, CheckCircle2, Eye, FileText, Headphones, LogOut, RefreshCw, Save, Search, Send, ShieldCheck, Users, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,18 +118,22 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [loading, setLoading] = useState(true);
   const [savingSupport, setSavingSupport] = useState(false);
   const [message, setMessage] = useState("");
+  const [balances, setBalances] = useState<Record<string, number>>({});
+
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [userRows, requestRows, chixRows, settings] = await Promise.all([
+    const [userRows, requestRows, chixRows, settings, balanceRows] = await Promise.all([
       supabase.rpc("admin_list_users"),
       supabase.rpc("admin_list_upgrade_requests"),
       supabase.rpc("admin_list_chix_requests"),
       supabase.from("app_settings").select("key, value").in("key", ["chix_id_code", "support_email", "support_telegram_url", "support_whatsapp_url"]),
+      supabase.rpc("admin_list_balances"),
     ]);
     if (userRows.data) setUsers(userRows.data as unknown as AdminUser[]);
     if (requestRows.data) setRequests(requestRows.data as unknown as AdminRequest[]);
     if (chixRows.data) setChixRequests(chixRows.data as unknown as ChixRequest[]);
+    if (balanceRows.data) setBalances(Object.fromEntries((balanceRows.data as unknown as { user_id: string; balance: number }[]).map((row) => [row.user_id, Number(row.balance)])));
     for (const setting of settings.data ?? []) {
       if (setting.key === "chix_id_code") setChixCode(setting.value);
       if (setting.key === "support_email") setSupportEmail(setting.value);
@@ -191,6 +195,27 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
     if (error) return setMessage("That account could not be updated.");
     setMessage(status === "active" ? `${user.full_name ?? user.email} was restored.` : `${user.full_name ?? user.email} is now restricted.`);
     void load();
+  };
+
+  const adjustBalance = async (user: AdminUser) => {
+    const entry = window.prompt(`Adjust balance for ${user.full_name ?? user.email}. Enter an amount in naira (use a minus sign to remove money).`, "5000");
+    if (entry === null) return;
+    const amount = Number(entry.replace(/[^0-9.-]/g, ""));
+    if (!amount) return setMessage("Enter a valid amount, for example 5000 or -5000.");
+    const reason = window.prompt("Reason shown to the member (optional)", "Manual adjustment") ?? "";
+    const { error } = await supabase.rpc("admin_adjust_balance", { _user_id: user.id, _amount: amount, _reason: reason });
+    if (error) return setMessage("That balance could not be updated.");
+    setMessage(`${money(Math.abs(amount))} ${amount > 0 ? "added to" : "removed from"} ${user.full_name ?? user.email}. The member was notified.`);
+    void load();
+  };
+
+  const sendMessage = async (user: AdminUser) => {
+    const title = window.prompt("Message title", "Message from ChixPay");
+    if (!title) return;
+    const body = window.prompt("Message to the member", "");
+    if (!body) return;
+    const { error } = await supabase.rpc("admin_send_notification", { _user_id: user.id, _title: title, _body: body });
+    setMessage(error ? "That message could not be sent." : `Message sent to ${user.full_name ?? user.email}.`);
   };
 
   const setRequestStatus = async (request: AdminRequest, status: string) => {
@@ -290,15 +315,18 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
                 <StatusPill status={status}/>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="rounded-full bg-leaf/15 px-2.5 py-1 font-semibold text-leaf">Balance {money(balances[user.id] ?? 0)}</span>
                 <span className="rounded-full bg-glass-strong px-2.5 py-1">{user.referral_count} referrals</span>
                 <span className="rounded-full bg-glass-strong px-2.5 py-1">{user.upgrade_count} upgrades</span>
                 {user.pending_upgrades > 0 && <span className="rounded-full bg-gold/15 px-2.5 py-1 text-gold">{user.pending_upgrades} pending</span>}
                 {user.referral_code && <span className="rounded-full bg-glass-strong px-2.5 py-1 tracking-[0.12em]">{user.referral_code}</span>}
               </div>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {status === "active"
-                  ? <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setStatus(user, "restricted")}><Ban/> Restrict account</Button>
+                  ? <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setStatus(user, "restricted")}><Ban/> Ban account</Button>
                   : <Button variant="glass" size="sm" onClick={() => void setStatus(user, "active")}><CheckCircle2/> Restore access</Button>}
+                <Button variant="glass" size="sm" onClick={() => void adjustBalance(user)}><Wallet/> Edit balance</Button>
+                <Button variant="glass" size="sm" onClick={() => void sendMessage(user)}><Send/> Send message</Button>
               </div>
             </div>;
           })}
