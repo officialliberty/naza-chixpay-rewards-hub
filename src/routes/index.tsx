@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  ArrowDownToLine, BadgeCheck, Bell, ChevronRight, CirclePlay, Clock3,
-  Check, Copy, Eye, EyeOff, History, IdCard, LockKeyhole, Play,
+  ArrowDownToLine, BadgeCheck, Bell, ChevronRight, Clock3,
+  Check, Copy, Eye, EyeOff, Headphones, History, IdCard, LockKeyhole,
   ShieldCheck, Sparkles, Star, Trophy, Users, Wallet, Zap,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ import { ReferralPanel } from "@/components/referral-panel";
 import { ChixIdFlow } from "@/components/chix-id-flow";
 import { WithdrawFlow } from "@/components/withdraw-flow";
 import { ProfilePage } from "@/components/profile-page";
+import { SupportPage } from "@/components/support-page";
 
 import nairaNote from "@/assets/naira-1000-clean.png";
 
@@ -186,7 +187,7 @@ function ChixPay() {
       <div className="max-w-xl">
         <div className="inline-flex items-center gap-2 rounded-full border border-leaf/25 bg-leaf/10 px-3 py-1.5 text-xs text-leaf backdrop-blur-xl"><Sparkles className="size-3.5"/> A smarter way to earn rewards</div>
         <h1 className="mt-6 font-display text-[42px] font-semibold leading-[1.07] sm:text-5xl lg:text-6xl">Move money forward.<br/><span className="text-leaf">Get rewarded.</span></h1>
-        <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">ChixPay brings rewards, tasks, videos, and referrals into one clear experience built for everyday Nigerians.</p>
+        <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">ChixPay brings rewards, tasks, referrals, and member support into one clear experience built for everyday Nigerians.</p>
         <p className="mt-4 flex items-start gap-2 text-sm text-foreground/80"><Check className="mt-0.5 size-4 shrink-0 text-gold"/> New members can unlock a ₦170,000 welcome offer after registration.</p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Button variant="reward" size="lg" className="sm:min-w-48" onClick={() => { setMode("signup"); setScreen("auth"); }}>Create free account <ChevronRight/></Button>
@@ -201,7 +202,7 @@ function ChixPay() {
           <div className="flex items-center justify-between"><span className="text-xs font-semibold text-leaf">CHIXPAY EXPERIENCE</span><span className="size-2 rounded-full bg-gold"/></div>
           <h2 className="mt-8 font-display text-2xl font-semibold">Everything in one place.</h2>
           <div className="mt-6 space-y-3">
-            {[{icon: BadgeCheck,title:"Complete verified tasks",text:"See opportunities clearly before you begin."},{icon: CirclePlay,title:"Watch and earn",text:"Discover eligible video rewards in one feed."},{icon: Users,title:"Invite your people",text:"Track referral activity from your account."}].map(({icon:Icon,title,text}) => <div key={title} className="flex gap-3 rounded-2xl border border-glass-border bg-glass p-3.5"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-leaf/15 text-leaf"><Icon className="size-5"/></span><div><p className="text-sm font-semibold">{title}</p><p className="mt-0.5 text-xs leading-5 text-muted-foreground">{text}</p></div></div>)}
+            {[{icon: BadgeCheck,title:"Complete verified tasks",text:"See opportunities clearly before you begin."},{icon: Headphones,title:"Support when you need it",text:"Reach the ChixPay team through trusted channels."},{icon: Users,title:"Invite your people",text:"Track referral activity from your account."}].map(({icon:Icon,title,text}) => <div key={title} className="flex gap-3 rounded-2xl border border-glass-border bg-glass p-3.5"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-leaf/15 text-leaf"><Icon className="size-5"/></span><div><p className="text-sm font-semibold">{title}</p><p className="mt-0.5 text-xs leading-5 text-muted-foreground">{text}</p></div></div>)}
           </div>
         </div>
       </div>
@@ -240,7 +241,7 @@ function Tutorial({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const slides = [
     { icon: Wallet, tag: "Your wallet", title: "Claim rewards", text: "A ₦35,000 reward appears every 10 minutes. Claim before the timer resets." },
-    { icon: Trophy, tag: "Grow earnings", title: "Complete & earn", text: "Finish tasks, watch videos, and invite friends for more rewards." },
+    { icon: Trophy, tag: "Grow earnings", title: "Complete & earn", text: "Finish tasks and invite friends for more rewards." },
     { icon: IdCard, tag: "Ready to cash out", title: "Get your Chix ID", text: "Buy and activate your Chix ID before making your first withdrawal." },
   ];
   const item = slides[step] ?? slides[0];
@@ -252,14 +253,13 @@ function Tutorial({ onDone }: { onDone: () => void }) {
 const actions = [
   { label: "Withdraw", sub: "To your bank", icon: ArrowDownToLine }, { label: "Tasks", sub: "Earn daily", icon: BadgeCheck },
   { label: "Upgrade", sub: "Raise limits", icon: Trophy },
-  { label: "Referral", sub: "Invite friends", icon: Users }, { label: "Videos", sub: "Watch to earn", icon: CirclePlay },
+  { label: "Referral", sub: "Invite friends", icon: Users }, { label: "Support", sub: "Get help", icon: Headphones },
 ];
 
 const actionCopy: Record<string, { title: string; description: string; button: string }> = {
   "Buy Chix ID": { title: "Activate your Chix ID", description: "Your Chix ID verifies your wallet before your first withdrawal.", button: "Activate Chix ID" },
   Withdraw: { title: "Withdraw funds", description: "Choose an amount and continue to your verified bank details.", button: "Continue withdrawal" },
   Tasks: { title: "Daily tasks", description: "Complete today’s verified activities to grow your reward balance.", button: "Start today’s task" },
-  Videos: { title: "Watch & earn", description: "Watch the featured reward video and complete the short check afterward.", button: "Play reward video" },
   History: { title: "Reward history", description: "Your latest wallet activity appears here.", button: "Done" },
   Notifications: { title: "Notifications", description: "You’re all caught up. New reward and account updates will appear here.", button: "Done" },
 };
@@ -273,7 +273,7 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
   const [seconds, setSeconds] = useState(0); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [chixIdActive, setChixIdActive] = useState(false);
-  const [view, setView] = useState<"home" | "upgrade" | "referral" | "chixid" | "withdraw" | "profile">("home");
+  const [view, setView] = useState<"home" | "upgrade" | "referral" | "chixid" | "withdraw" | "profile" | "support">("home");
   const [claimHistory, setClaimHistory] = useState<ClaimRecord[]>([]);
   const [withdrawn, setWithdrawn] = useState(0);
   const [cashBurst, setCashBurst] = useState(0);
@@ -342,6 +342,7 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
     if (label === "Buy Chix ID") return setView("chixid");
     if (label === "Withdraw") return setView("withdraw");
     if (label === "Profile") return setView("profile");
+    if (label === "Support") return setView("support");
     setActiveAction(label);
   };
   const completeAction = () => {
@@ -362,6 +363,7 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
     onSuccess={(amount) => { setWithdrawn((total) => total + amount); setChixIdActive(true); }}
   /></Shell>;
   if (view === "profile") return <Shell><ProfilePage fallbackName={name} fallbackState={state} chixIdActive={chixIdActive} onBack={() => setView("home")} onLogout={onLogout} onAvatarChange={setAvatarUrl}/></Shell>;
+  if (view === "support") return <Shell><SupportPage onBack={() => setView("home")}/></Shell>;
   return <Shell>
     <CashFall burst={cashBurst}/>
     <header className="flex items-center justify-between"><div className="flex items-center gap-2.5"><Button aria-label="Open profile" variant="ghost" size="icon" className="size-10 rounded-full p-0" onClick={() => openAction("Profile")}><Avatar className="size-10 border border-glass-border bg-glass"><AvatarImage src={avatarUrl ?? undefined} alt={`${name}'s profile`} className="object-cover"/><AvatarFallback className="bg-glass font-display text-sm font-semibold text-gold">{name.charAt(0).toUpperCase()}</AvatarFallback></Avatar></Button><Button variant="ghost" className="h-auto flex-col items-start gap-0 rounded-xl px-1 py-1 text-left" onClick={() => openAction("Profile")}><span className="font-display text-sm font-semibold">{name}</span><span className="text-[11px] font-normal text-muted-foreground">{state} State · View profile</span></Button></div><Button aria-label="Notifications" variant="glass" size="icon" className="rounded-full" onClick={() => openAction("Notifications")}><Bell/></Button></header>
@@ -371,7 +373,7 @@ function Dashboard({ name, state, onLogout }: { name: string; state: string; onL
     <div className="mt-4 grid grid-cols-2 gap-2.5"><Button variant="brand" size="lg" onClick={() => openAction("Buy Chix ID")}>{chixIdActive ? "Chix ID active" : "Buy Chix ID"} <IdCard/></Button><Button variant="glass" size="lg" onClick={() => openAction("Withdraw")}>Withdraw <ArrowDownToLine/></Button></div>
     <section className="mt-5"><div className="flex items-center justify-between px-1"><h2 className="font-display text-sm font-semibold">Quick actions</h2><span className="text-[11px] text-muted-foreground">Earn & manage</span></div><div className="mt-2 grid grid-cols-2 gap-2.5">{actions.slice(1).map(({label,sub,icon:Icon}, i) => <Button key={label} variant="glass" className="h-auto justify-start rounded-2xl p-3 text-left" onClick={() => openAction(label)}><span className={`grid size-9 place-items-center rounded-xl ${i % 2 ? "bg-brand/15 text-brand" : "bg-leaf/15 text-leaf"}`}><Icon/></span><span><span className="block text-xs font-semibold">{label}</span><span className="block text-[9px] font-normal text-muted-foreground">{sub}</span></span></Button>)}</div></section>
     <section className="mb-32 mt-5 rounded-2xl border border-glass-border bg-glass p-4 backdrop-blur-xl"><div className="flex items-center justify-between"><h2 className="font-display text-sm font-semibold">Recent activity</h2><Button variant="ghost" size="sm" onClick={() => openAction("History")}>View all</Button></div>{claimHistory[0] && <div className="mt-2 flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-gold/15 text-gold"><Zap/></span><div className="flex-1"><p className="text-xs font-medium">Reward claimed</p><p className="text-[10px] text-muted-foreground">{new Date(claimHistory[0].claimedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p></div><p className="text-xs font-semibold text-leaf">+₦{claimHistory[0].amount.toLocaleString()}</p></div>}<div className="mt-2 flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-leaf/15 text-leaf"><Star/></span><div className="flex-1"><p className="text-xs font-medium">Welcome bonus added</p><p className="text-[10px] text-muted-foreground">Today</p></div><p className="text-xs font-semibold text-leaf">+₦170,000</p></div></section>
-    <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 px-5 pb-5"><div className="grid grid-cols-5 rounded-full border border-glass-border bg-glass-strong p-1.5 backdrop-blur-2xl">{[[Wallet,"Wallet"],[BadgeCheck,"Tasks"],[Play,"Videos"],[History,"History"],[Users,"Referral"]].map(([Icon,label],i) => { const I = Icon as typeof Wallet; return <Button variant="ghost" key={label as string} onClick={() => label !== "Wallet" && openAction(label as string)} className={`h-auto flex-col gap-1 rounded-full px-1 py-2 text-[9px] ${i === 0 ? "bg-glass-strong text-foreground" : "text-muted-foreground"}`}><I className="size-4"/>{label as string}</Button>})}</div></nav>
-    <Dialog open={Boolean(activeAction)} onOpenChange={(open) => !open && setActiveAction(null)}><DialogContent className="w-[calc(100%-32px)] rounded-[28px] border-glass-border bg-background/95 p-6 text-foreground shadow-brand backdrop-blur-2xl"><DialogHeader><div className="mb-3 grid size-12 place-items-center rounded-2xl bg-leaf/15 text-leaf">{activeAction === "Referral" ? <Copy/> : activeAction === "Videos" ? <Play/> : <Zap/>}</div><DialogTitle className="font-display text-xl">{activeCopy?.title}</DialogTitle><DialogDescription className="leading-6">{activeCopy?.description}</DialogDescription></DialogHeader>{activeAction === "Withdraw" && <Input inputMode="numeric" placeholder="Enter amount in naira" className="h-12 rounded-2xl bg-glass"/>}{activeAction === "History" && <div className="max-h-72 space-y-2 overflow-y-auto">{claimHistory.map((entry) => <div key={entry.id} className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Reward claimed</span><span className="mt-1 block text-[10px] text-muted-foreground">{new Date(entry.claimedAt).toLocaleString()}</span></span><strong className="text-leaf">+₦{entry.amount.toLocaleString()}</strong></div>)}<div className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Welcome bonus</span><span className="mt-1 block text-[10px] text-muted-foreground">Account opened</span></span><strong className="text-leaf">+₦170,000</strong></div></div>}<Button variant="reward" size="lg" className="mt-2 w-full" onClick={completeAction}>{activeCopy?.button}</Button></DialogContent></Dialog>
+    <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 px-5 pb-5"><div className="grid grid-cols-5 rounded-full border border-glass-border bg-glass-strong p-1.5 backdrop-blur-2xl">{[[Wallet,"Wallet"],[BadgeCheck,"Tasks"],[Headphones,"Support"],[History,"History"],[Users,"Referral"]].map(([Icon,label],i) => { const I = Icon as typeof Wallet; return <Button variant="ghost" key={label as string} onClick={() => label !== "Wallet" && openAction(label as string)} className={`h-auto flex-col gap-1 rounded-full px-1 py-2 text-[9px] ${i === 0 ? "bg-glass-strong text-foreground" : "text-muted-foreground"}`}><I className="size-4"/>{label as string}</Button>})}</div></nav>
+    <Dialog open={Boolean(activeAction)} onOpenChange={(open) => !open && setActiveAction(null)}><DialogContent className="w-[calc(100%-32px)] rounded-[28px] border-glass-border bg-background/95 p-6 text-foreground shadow-brand backdrop-blur-2xl"><DialogHeader><div className="mb-3 grid size-12 place-items-center rounded-2xl bg-leaf/15 text-leaf">{activeAction === "Referral" ? <Copy/> : <Zap/>}</div><DialogTitle className="font-display text-xl">{activeCopy?.title}</DialogTitle><DialogDescription className="leading-6">{activeCopy?.description}</DialogDescription></DialogHeader>{activeAction === "Withdraw" && <Input inputMode="numeric" placeholder="Enter amount in naira" className="h-12 rounded-2xl bg-glass"/>}{activeAction === "History" && <div className="max-h-72 space-y-2 overflow-y-auto">{claimHistory.map((entry) => <div key={entry.id} className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Reward claimed</span><span className="mt-1 block text-[10px] text-muted-foreground">{new Date(entry.claimedAt).toLocaleString()}</span></span><strong className="text-leaf">+₦{entry.amount.toLocaleString()}</strong></div>)}<div className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span><span className="block font-semibold">Welcome bonus</span><span className="mt-1 block text-[10px] text-muted-foreground">Account opened</span></span><strong className="text-leaf">+₦170,000</strong></div></div>}<Button variant="reward" size="lg" className="mt-2 w-full" onClick={completeAction}>{activeCopy?.button}</Button></DialogContent></Dialog>
   </Shell>;
 }
