@@ -14,7 +14,7 @@ import { lovable } from "@/integrations/lovable";
 import logoMark from "@/assets/chixpay-logo.png";
 import { UpgradeFlow } from "@/components/upgrade-flow";
 import { ReferralPanel } from "@/components/referral-panel";
-import { ChixIdFlow } from "@/components/chix-id-flow";
+import { ChixIdFlow, keyIsActive, type KeyInfo } from "@/components/chix-id-flow";
 import { WithdrawFlow } from "@/components/withdraw-flow";
 import { ProfilePage } from "@/components/profile-page";
 import { SupportPage } from "@/components/support-page";
