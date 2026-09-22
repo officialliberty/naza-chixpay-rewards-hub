@@ -277,26 +277,22 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   };
 
   const policyPanel = (kind: "fee" | "upgrade" | "final", empty: string) => <Panel className="mt-3">
-    <div className="space-y-3">
-      {loading && <p className="text-sm text-muted-foreground">Loading payments…</p>}
-      {!loading && withdrawPayments.filter((row) => row.kind === kind).length === 0 && <p className="text-sm text-muted-foreground">{empty}</p>}
-      {withdrawPayments.filter((row) => row.kind === kind).map((row) => <div key={row.id} className="rounded-2xl border border-glass-border bg-glass p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="font-display text-sm font-semibold">{row.plan_name ?? row.kind} · {money(row.amount)}</p>
-            <p className="text-xs text-muted-foreground">{row.full_name ?? "Unnamed member"} · {row.email ?? "No email"}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Withdrawal {money(row.withdraw_amount)} · {row.bank_name} · {row.account_number}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(row.created_at)} · Withdrawal step: {row.stage}</p>
-          </div>
-          <StatusPill status={row.status}/>
+    <ReviewSection title="Reviewed payments" rows={withdrawPayments.filter((row) => row.kind === kind)} empty={empty} loading={loading} render={(row) => <div key={row.id} className={`rounded-2xl border p-4 ${row.status === "pending" ? "border-gold/40 bg-gold/5" : "border-glass-border bg-glass"}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-display text-sm font-semibold">{row.plan_name ?? row.kind} · {money(row.amount)}</p>
+          <p className="text-xs text-muted-foreground">{row.full_name ?? "Unnamed member"} · {row.email ?? "No email"}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Withdrawal {money(row.withdraw_amount)} · {row.bank_name} · {row.account_number}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Submitted {when(row.created_at)} · Withdrawal step: {row.stage}</p>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button variant="glass" size="sm" onClick={() => void openPath(row.receipt_path)}><Eye/> View receipt</Button>
-          <Button variant="reward" size="sm" onClick={() => void setWithdrawPaymentStatus(row, "approved")}><CheckCircle2/> Approve</Button>
-          <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setWithdrawPaymentStatus(row, "rejected")}><Ban/> Reject</Button>
-        </div>
-      </div>)}
-    </div>
+        {row.status === "pending" ? <PendingBadge/> : <StatusPill status={row.status}/>}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button variant="glass" size="sm" onClick={() => void openPath(row.receipt_path)}><Eye/> View receipt</Button>
+        <Button variant="reward" size="sm" onClick={() => void setWithdrawPaymentStatus(row, "approved")}><CheckCircle2/> Approve</Button>
+        <Button variant="glass" size="sm" className="border-destructive/30 text-destructive-foreground" onClick={() => void setWithdrawPaymentStatus(row, "rejected")}><Ban/> Reject</Button>
+      </div>
+    </div>}/>
   </Panel>;
 
   const filtered = useMemo(() => {
