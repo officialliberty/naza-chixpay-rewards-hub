@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowDownToLine, BadgeCheck, Bell, ChevronRight, CirclePlay, Clock3,
-  Check, Copy, Eye, EyeOff, History, IdCard, LockKeyhole, Megaphone, Play,
+  Check, Copy, Eye, EyeOff, History, IdCard, LockKeyhole, Play,
   ShieldCheck, Sparkles, Star, Trophy, Users, Wallet, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import logoMark from "@/assets/chixpay-logo.png";
+import { UpgradeFlow } from "@/components/upgrade-flow";
+import { ReferralPanel } from "@/components/referral-panel";
 
 import nairaNote from "@/assets/naira-1000.png.asset.json";
 
@@ -27,7 +29,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Screen = "landing" | "auth" | "state" | "tutorial" | "dashboard";
-type FormData = { fullName: string; email: string; phone: string; password: string; state: string };
+type FormData = { fullName: string; email: string; phone: string; password: string; state: string; referralCode: string };
 
 const states = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT Abuja","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
 
@@ -64,7 +66,7 @@ function Brand() {
 function ChixPay() {
   const [screen, setScreen] = useState<Screen>("landing");
   const [mode, setMode] = useState<"signup" | "login">("signup");
-  const [form, setForm] = useState<FormData>({ fullName: "", email: "", phone: "", password: "", state: "" });
+  const [form, setForm] = useState<FormData>({ fullName: "", email: "", phone: "", password: "", state: "", referralCode: "" });
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -74,7 +76,7 @@ function ChixPay() {
     const openSignedInAccount = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) return;
-      const meta = data.user.user_metadata as Partial<FormData>;
+      const meta = ((data.user.user_metadata ?? {}) as Partial<FormData>);
       setForm((old) => ({
         ...old,
         email: data.user.email ?? old.email,
@@ -85,10 +87,13 @@ function ChixPay() {
       setScreen("dashboard");
     };
 
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) setForm((old) => ({ ...old, referralCode: ref.toUpperCase() }));
+
     void openSignedInAccount();
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event !== "SIGNED_IN" && event !== "USER_UPDATED") || !session?.user) return;
-      const meta = session.user.user_metadata as Partial<FormData>;
+      const meta = ((session.user.user_metadata ?? {}) as Partial<FormData>);
       setForm((old) => ({
         ...old,
         email: session.user.email ?? old.email,
@@ -109,7 +114,7 @@ function ChixPay() {
     setBusy(false);
     if (error) return setNotice(error.message === "Invalid login credentials" ? "The email or password is incorrect. Please try again." : error.message);
     if (!data.user) return setNotice("We could not open your account. Please try again.");
-    const meta = data.user.user_metadata as Partial<FormData>;
+    const meta = ((data.user.user_metadata ?? {}) as Partial<FormData>);
     setForm((old) => ({ ...old, fullName: meta.fullName ?? "ChixPay member", phone: meta.phone ?? "", state: meta.state ?? "Lagos" }));
     setScreen("dashboard");
   };
@@ -129,6 +134,12 @@ function ChixPay() {
     }
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) await supabase.from("profiles").upsert({ id: userData.user.id, full_name: form.fullName, phone: form.phone, state: form.state });
+    const code = form.referralCode.trim();
+    if (code) {
+      const { data: result } = await supabase.rpc("redeem_referral", { _code: code, _name: form.fullName });
+      const outcome = result as { ok?: boolean; reason?: string } | null;
+      if (outcome && !outcome.ok) setNotice(outcome.reason === "invalid_code" ? "That referral code was not recognised, so no referral was recorded." : "Your referral code could not be applied.");
+    }
     setBusy(false);
     setForm((old) => ({ ...old, email }));
     setScreen("tutorial");
@@ -174,7 +185,7 @@ function ChixPay() {
         <div className="flex items-center justify-between"><div><p className="text-xs font-semibold text-leaf">{mode === "signup" ? "STEP 1 OF 2" : "SECURE SIGN IN"}</p><h1 className="mt-2 font-display text-2xl font-semibold sm:text-3xl">{mode === "signup" ? "Create your account" : "Welcome back"}</h1><p className="mt-2 text-sm text-muted-foreground">{mode === "signup" ? "Enter your details exactly as you use them." : "Use the email linked to your ChixPay account."}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-leaf/15 text-leaf"><ShieldCheck/></span></div>
         {mode === "signup" && <div className="mt-6 grid grid-cols-2 gap-2"><span className="h-1.5 rounded-full bg-gold"/><span className="h-1.5 rounded-full bg-glass-strong"/></div>}
         <form className="mt-6 space-y-4" onSubmit={mode === "signup" ? beginSignup : login}>
-          {mode === "signup" && <><label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Full legal name</span><Input required autoComplete="name" placeholder="e.g. Adaeze Okafor" value={form.fullName} onChange={(e) => update("fullName", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4"/></label><label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Phone number</span><div className="flex h-13 overflow-hidden rounded-2xl border border-glass-border bg-background/45 focus-within:ring-1 focus-within:ring-ring"><span className="grid place-items-center border-r border-glass-border px-4 text-sm font-semibold">+234</span><Input required autoComplete="tel" inputMode="tel" placeholder="801 234 5678" value={form.phone} onChange={(e) => update("phone", e.target.value)} className="h-full rounded-none border-0 bg-transparent px-4 focus-visible:ring-0"/></div></label></>}
+          {mode === "signup" && <><label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Full legal name</span><Input required autoComplete="name" placeholder="e.g. Adaeze Okafor" value={form.fullName} onChange={(e) => update("fullName", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4"/></label><label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Phone number</span><div className="flex h-13 overflow-hidden rounded-2xl border border-glass-border bg-background/45 focus-within:ring-1 focus-within:ring-ring"><span className="grid place-items-center border-r border-glass-border px-4 text-sm font-semibold">+234</span><Input required autoComplete="tel" inputMode="tel" placeholder="801 234 5678" value={form.phone} onChange={(e) => update("phone", e.target.value)} className="h-full rounded-none border-0 bg-transparent px-4 focus-visible:ring-0"/></div></label><label className="block"><span className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">Referral code <span className="font-normal">Optional</span></span><Input placeholder="e.g. CHX4F29A1" value={form.referralCode} onChange={(e) => update("referralCode", e.target.value.toUpperCase())} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4 uppercase tracking-[0.12em]"/><span className="mt-2 block text-[11px] text-muted-foreground">Have a friend&rsquo;s code? Enter it and they earn ₦5,200 when your account is created.</span></label></>}
           <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Email address</span><Input required autoComplete="email" type="email" placeholder="you@example.com" value={form.email} onChange={(e) => update("email", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4"/></label>
           <label className="block"><span className="mb-2 block text-xs font-semibold text-muted-foreground">Password</span><div className="relative"><Input required autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={6} type={showPassword ? "text" : "password"} placeholder={mode === "signup" ? "At least 6 characters" : "Enter your password"} value={form.password} onChange={(e) => update("password", e.target.value)} className="h-13 rounded-2xl border-glass-border bg-background/45 px-4 pr-12"/><Button type="button" variant="ghost" size="icon" aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-2 top-2 rounded-xl text-muted-foreground" onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff/> : <Eye/>}</Button></div></label>
           {mode === "signup" && <label className="flex cursor-pointer items-start gap-3 text-xs leading-5 text-muted-foreground"><input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-0.5 size-4 accent-[var(--gold)]"/><span>I agree to the <span className="font-semibold text-foreground">Terms of Use</span> and acknowledge the <span className="font-semibold text-foreground">Privacy Notice</span>.</span></label>}
@@ -212,7 +223,7 @@ function Tutorial({ onDone }: { onDone: () => void }) {
 
 const actions = [
   { label: "Withdraw", sub: "To your bank", icon: ArrowDownToLine }, { label: "Tasks", sub: "Earn daily", icon: BadgeCheck },
-  { label: "Broadcast", sub: "Share & earn", icon: Megaphone }, { label: "Upgrade", sub: "Raise limits", icon: Trophy },
+  { label: "Upgrade", sub: "Raise limits", icon: Trophy },
   { label: "Referral", sub: "Invite friends", icon: Users }, { label: "Videos", sub: "Watch to earn", icon: CirclePlay },
 ];
 
@@ -220,9 +231,6 @@ const actionCopy: Record<string, { title: string; description: string; button: s
   "Buy Chix ID": { title: "Activate your Chix ID", description: "Your Chix ID verifies your wallet before your first withdrawal.", button: "Activate Chix ID" },
   Withdraw: { title: "Withdraw funds", description: "Choose an amount and continue to your verified bank details.", button: "Continue withdrawal" },
   Tasks: { title: "Daily tasks", description: "Complete today’s verified activities to grow your reward balance.", button: "Start today’s task" },
-  Broadcast: { title: "Broadcast & earn", description: "Share your unique ChixPay message and return here to confirm it.", button: "Copy broadcast message" },
-  Upgrade: { title: "Upgrade account", description: "Complete account verification to unlock higher reward and withdrawal limits.", button: "Start verification" },
-  Referral: { title: "Invite friends", description: "Share your personal invitation and track successful referrals.", button: "Copy referral link" },
   Videos: { title: "Watch & earn", description: "Watch the featured reward video and complete the short check afterward.", button: "Play reward video" },
   History: { title: "Reward history", description: "Your latest wallet activity appears here.", button: "Done" },
   Profile: { title: "Your profile", description: "Review your personal details, state, and verification status.", button: "Done" },
@@ -234,6 +242,7 @@ function Dashboard({ name, state }: { name: string; state: string }) {
   const [seconds, setSeconds] = useState(0); const [balance, setBalance] = useState(170000); const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [chixIdActive, setChixIdActive] = useState(false);
+  const [view, setView] = useState<"home" | "upgrade" | "referral">("home");
   useEffect(() => {
     const updateCountdown = () => setSeconds(Math.max(0, Math.ceil((nextClaimAt - Date.now()) / 1000)));
     updateCountdown();
@@ -242,7 +251,11 @@ function Dashboard({ name, state }: { name: string; state: string }) {
   }, [nextClaimAt]);
   const clock = useMemo(() => `${String(Math.floor(seconds / 60)).padStart(2,"0")}:${String(seconds % 60).padStart(2,"0")}`, [seconds]);
   const claimReady = seconds === 0;
-  const openAction = (label: string) => setActiveAction(label);
+  const openAction = (label: string) => {
+    if (label === "Upgrade") return setView("upgrade");
+    if (label === "Referral") return setView("referral");
+    setActiveAction(label);
+  };
   const completeAction = () => {
     if (!activeAction) return;
     if (activeAction === "Withdraw" && !chixIdActive) {
@@ -256,6 +269,8 @@ function Dashboard({ name, state }: { name: string; state: string }) {
     setMessage(completed === "Buy Chix ID" ? "Your Chix ID is now active." : `${completed} action completed.`);
   };
   const activeCopy = activeAction ? actionCopy[activeAction] : undefined;
+  if (view === "upgrade") return <Shell><UpgradeFlow onBack={() => setView("home")}/></Shell>;
+  if (view === "referral") return <Shell><ReferralPanel onBack={() => setView("home")}/></Shell>;
   return <Shell>
     <header className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="grid size-10 place-items-center rounded-full border border-glass-border bg-glass font-display text-sm font-semibold text-gold">{name.charAt(0).toUpperCase()}</div><div><p className="font-display text-sm font-semibold">{name}</p><p className="text-[11px] text-muted-foreground">{state} State</p></div></div><Button aria-label="Notifications" variant="glass" size="icon" className="rounded-full" onClick={() => openAction("Notifications")}><Bell/></Button></header>
     {message && <Button variant="glass" onClick={() => setMessage("")} className="mt-3 h-auto w-full justify-start whitespace-normal rounded-2xl border-leaf/25 bg-leaf/10 p-3 text-left text-xs text-leaf">{message}</Button>}
@@ -264,7 +279,7 @@ function Dashboard({ name, state }: { name: string; state: string }) {
     <div className="mt-4 grid grid-cols-2 gap-2.5"><Button variant="brand" size="lg" onClick={() => openAction("Buy Chix ID")}>{chixIdActive ? "Chix ID active" : "Buy Chix ID"} <IdCard/></Button><Button variant="glass" size="lg" onClick={() => openAction("Withdraw")}>Withdraw <ArrowDownToLine/></Button></div>
     <section className="mt-5"><div className="flex items-center justify-between px-1"><h2 className="font-display text-sm font-semibold">Quick actions</h2><span className="text-[11px] text-muted-foreground">Earn & manage</span></div><div className="mt-2 grid grid-cols-2 gap-2.5">{actions.slice(1).map(({label,sub,icon:Icon}, i) => <Button key={label} variant="glass" className="h-auto justify-start rounded-2xl p-3 text-left" onClick={() => openAction(label)}><span className={`grid size-9 place-items-center rounded-xl ${i % 2 ? "bg-brand/15 text-brand" : "bg-leaf/15 text-leaf"}`}><Icon/></span><span><span className="block text-xs font-semibold">{label}</span><span className="block text-[9px] font-normal text-muted-foreground">{sub}</span></span></Button>)}</div></section>
     <section className="mb-32 mt-5 rounded-2xl border border-glass-border bg-glass p-4 backdrop-blur-xl"><div className="flex items-center justify-between"><h2 className="font-display text-sm font-semibold">Recent activity</h2><Button variant="ghost" size="sm" onClick={() => openAction("History")}>View all</Button></div><div className="mt-2 flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-leaf/15 text-leaf"><Star/></span><div className="flex-1"><p className="text-xs font-medium">Welcome bonus added</p><p className="text-[10px] text-muted-foreground">Today</p></div><p className="text-xs font-semibold text-leaf">+₦170,000</p></div></section>
-    <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 px-5 pb-5"><div className="grid grid-cols-5 rounded-full border border-glass-border bg-glass-strong p-1.5 backdrop-blur-2xl">{[[Wallet,"Wallet"],[BadgeCheck,"Tasks"],[Play,"Videos"],[History,"History"],[Users,"Profile"]].map(([Icon,label],i) => { const I = Icon as typeof Wallet; return <Button variant="ghost" key={label as string} onClick={() => label !== "Wallet" && openAction(label as string)} className={`h-auto flex-col gap-1 rounded-full px-1 py-2 text-[9px] ${i === 0 ? "bg-glass-strong text-foreground" : "text-muted-foreground"}`}><I className="size-4"/>{label as string}</Button>})}</div></nav>
-    <Dialog open={Boolean(activeAction)} onOpenChange={(open) => !open && setActiveAction(null)}><DialogContent className="w-[calc(100%-32px)] rounded-[28px] border-glass-border bg-background/95 p-6 text-foreground shadow-brand backdrop-blur-2xl"><DialogHeader><div className="mb-3 grid size-12 place-items-center rounded-2xl bg-leaf/15 text-leaf">{activeAction === "Broadcast" || activeAction === "Referral" ? <Copy/> : activeAction === "Videos" ? <Play/> : <Zap/>}</div><DialogTitle className="font-display text-xl">{activeCopy?.title}</DialogTitle><DialogDescription className="leading-6">{activeCopy?.description}</DialogDescription></DialogHeader>{activeAction === "Withdraw" && <Input inputMode="numeric" placeholder="Enter amount in naira" className="h-12 rounded-2xl bg-glass"/>}{activeAction === "History" && <div className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span>Welcome bonus</span><strong className="text-leaf">+₦170,000</strong></div>}{activeAction === "Profile" && <div className="rounded-2xl border border-glass-border bg-glass p-4 text-sm"><p className="font-semibold">{name}</p><p className="mt-1 text-muted-foreground">{state} State · {chixIdActive ? "Chix ID active" : "Chix ID not active"}</p></div>}<Button variant="reward" size="lg" className="mt-2 w-full" onClick={completeAction}>{activeCopy?.button}</Button></DialogContent></Dialog>
+    <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 px-5 pb-5"><div className="grid grid-cols-5 rounded-full border border-glass-border bg-glass-strong p-1.5 backdrop-blur-2xl">{[[Wallet,"Wallet"],[BadgeCheck,"Tasks"],[Play,"Videos"],[History,"History"],[Users,"Referral"]].map(([Icon,label],i) => { const I = Icon as typeof Wallet; return <Button variant="ghost" key={label as string} onClick={() => label !== "Wallet" && openAction(label as string)} className={`h-auto flex-col gap-1 rounded-full px-1 py-2 text-[9px] ${i === 0 ? "bg-glass-strong text-foreground" : "text-muted-foreground"}`}><I className="size-4"/>{label as string}</Button>})}</div></nav>
+    <Dialog open={Boolean(activeAction)} onOpenChange={(open) => !open && setActiveAction(null)}><DialogContent className="w-[calc(100%-32px)] rounded-[28px] border-glass-border bg-background/95 p-6 text-foreground shadow-brand backdrop-blur-2xl"><DialogHeader><div className="mb-3 grid size-12 place-items-center rounded-2xl bg-leaf/15 text-leaf">{activeAction === "Referral" ? <Copy/> : activeAction === "Videos" ? <Play/> : <Zap/>}</div><DialogTitle className="font-display text-xl">{activeCopy?.title}</DialogTitle><DialogDescription className="leading-6">{activeCopy?.description}</DialogDescription></DialogHeader>{activeAction === "Withdraw" && <Input inputMode="numeric" placeholder="Enter amount in naira" className="h-12 rounded-2xl bg-glass"/>}{activeAction === "History" && <div className="flex items-center justify-between rounded-2xl border border-glass-border bg-glass p-4 text-xs"><span>Welcome bonus</span><strong className="text-leaf">+₦170,000</strong></div>}{activeAction === "Profile" && <div className="rounded-2xl border border-glass-border bg-glass p-4 text-sm"><p className="font-semibold">{name}</p><p className="mt-1 text-muted-foreground">{state} State · {chixIdActive ? "Chix ID active" : "Chix ID not active"}</p></div>}<Button variant="reward" size="lg" className="mt-2 w-full" onClick={completeAction}>{activeCopy?.button}</Button></DialogContent></Dialog>
   </Shell>;
 }

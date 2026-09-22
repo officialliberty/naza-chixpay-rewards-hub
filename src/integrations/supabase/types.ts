@@ -20,6 +20,8 @@ export type Database = {
           full_name: string
           id: string
           phone: string
+          referral_code: string | null
+          referred_by: string | null
           state: string
           updated_at: string
         }
@@ -28,6 +30,8 @@ export type Database = {
           full_name: string
           id: string
           phone: string
+          referral_code?: string | null
+          referred_by?: string | null
           state: string
           updated_at?: string
         }
@@ -36,8 +40,67 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string
+          referral_code?: string | null
+          referred_by?: string | null
           state?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          referred_id: string
+          referred_name: string
+          referrer_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          referred_id: string
+          referred_name?: string
+          referrer_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          referred_id?: string
+          referred_name?: string
+          referrer_id?: string
+        }
+        Relationships: []
+      }
+      upgrade_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          plan_name: string
+          receipt_path: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          plan_name: string
+          receipt_path?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          plan_name?: string
+          receipt_path?: string | null
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -46,7 +109,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      redeem_referral: { Args: { _code: string; _name: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

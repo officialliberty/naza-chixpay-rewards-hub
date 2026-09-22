@@ -8,6 +8,20 @@
       "when": 1790077226930,
       "tag": "0000_create_chixpay_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790080200513,
+      "tag": "0001_referrals_and_upgrades",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790080211425,
+      "tag": "0002_upgrade_receipt_storage_policies",
+      "breakpoints": true
     }
   ]
 }

@@ -197,6 +197,13 @@
 @utility landing-enter { animation: landing-enter .65s cubic-bezier(.22,1,.36,1) both; }
 @utility auth-enter { animation: auth-enter .45s cubic-bezier(.22,1,.36,1) both; }
 
+@keyframes chix-orbit { to { transform: rotate(360deg); } }
+@keyframes chix-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .85; } }
+@keyframes chix-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
+@utility chix-orbit { animation: chix-orbit 1.4s linear infinite; }
+@utility chix-pulse { animation: chix-pulse 1.8s ease-in-out infinite; }
+@utility chix-bar { animation: chix-bar 1.3s ease-in-out infinite; }
+
 .public-aura {
   background:
     radial-gradient(circle at 15% 10%, color-mix(in oklab, var(--leaf) 18%, transparent), transparent 34%),
@@ -204,5 +211,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .note-float, .note-float-two, .glow-breathe, .glass-sheen, .landing-enter, .auth-enter { animation: none; }
+  .note-float, .note-float-two, .glow-breathe, .glass-sheen, .landing-enter, .auth-enter, .chix-orbit, .chix-pulse, .chix-bar { animation: none; }
 }
