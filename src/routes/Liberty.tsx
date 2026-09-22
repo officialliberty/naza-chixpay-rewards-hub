@@ -522,7 +522,7 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
                 <span className="rounded-full bg-glass-strong px-2.5 py-1">{user.upgrade_count} upgrades</span>
                 {user.pending_upgrades > 0 && <span className="rounded-full bg-gold/15 px-2.5 py-1 text-gold">{user.pending_upgrades} pending</span>}
                 {user.referral_code && <span className="rounded-full bg-glass-strong px-2.5 py-1 tracking-[0.12em]">{user.referral_code}</span>}
-                {chixKeys[user.id] && <span className="rounded-full bg-brand/15 px-2.5 py-1 font-semibold text-brand">Chix ID {chixKeys[user.id].code}{chixKeys[user.id].unlimited ? " · Unlimited" : ` · ${chixKeys[user.id].uses_left ?? 0} left`}</span>}
+                {chixKeys[user.id] && <span className="rounded-full bg-brand/15 px-2.5 py-1 font-semibold text-brand">Chix ID {chixKeys[user.id]!.code}{chixKeys[user.id]!.unlimited ? " · Unlimited" : ` · ${chixKeys[user.id]!.uses_left ?? 0} left`}</span>}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {status === "active"
