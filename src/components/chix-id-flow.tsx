@@ -59,11 +59,12 @@ export function ChixIdFlow({ onBack, onActivated }: { onBack: () => void; onActi
       if (cancelled || !user) return;
       const meta = user.user_metadata as { fullName?: string; full_name?: string } | undefined;
       setFullName(meta?.fullName ?? meta?.full_name ?? "");
-      const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited").eq("user_id", user.id).maybeSingle();
+      const { data: key } = await supabase.from("chix_keys").select("code, uses_left, unlimited, expires_at").eq("user_id", user.id).maybeSingle();
       if (cancelled) return;
-      if (key && (key.unlimited || (key.uses_left ?? 0) > 0)) {
-        setChixId(key.code);
-        onActivated?.(key.code);
+      if (keyIsActive(key)) {
+        setKeyInfo(key as KeyInfo);
+        setChixId(key!.code);
+        onActivated?.(key!.code);
         setStep("approved");
         return;
       }
