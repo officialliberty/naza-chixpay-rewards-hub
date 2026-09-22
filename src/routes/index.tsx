@@ -107,6 +107,14 @@ function ChixPay() {
   }, []);
 
   const update = (key: keyof FormData, value: string) => setForm((old) => ({ ...old, [key]: value }));
+  const blockedIfRestricted = async (userId: string) => {
+    const { data } = await supabase.from("profiles").select("status, restriction_reason").eq("id", userId).maybeSingle();
+    if (!data || (data.status ?? "active") === "active") return false;
+    await supabase.auth.signOut();
+    setScreen("auth");
+    setNotice(`This account is restricted${data.restriction_reason ? `: ${data.restriction_reason}` : ""}. Please contact ChixPay support.`);
+    return true;
+  };
   const login = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setNotice("");
     const email = form.email.trim().toLowerCase();
