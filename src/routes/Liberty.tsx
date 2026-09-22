@@ -118,6 +118,8 @@ function AdminDashboard({ onSignOut }: { onSignOut: () => void }) {
   const [loading, setLoading] = useState(true);
   const [savingSupport, setSavingSupport] = useState(false);
   const [message, setMessage] = useState("");
+  const [balances, setBalances] = useState<Record<string, number>>({});
+
 
   const load = useCallback(async () => {
     setLoading(true);
