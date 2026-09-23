@@ -396,7 +396,7 @@ function Dashboard({ name, state, onLogout, onRestricted }: { name: string; stat
     if (!alertNotice) return;
     const stamp = new Date().toISOString();
     setNotifications((current) => current.map((item) => item.id === alertNotice.id ? { ...item, read_at: stamp } : item));
-    void supabase.from("notifications").update({ read_at: stamp }).eq("id", alertNotice.id);
+    void supabase.from("notifications").update({ read_at: stamp }).eq("id", alertNotice.id).then(() => undefined);
   };
   if (alertNotice) return <Shell><AlertOverlay notice={alertNotice} remaining={pendingAlerts.length} onDismiss={dismissAlert}/></Shell>;
   if (view === "upgrade") return <Shell><UpgradeFlow onBack={() => setView("home")}/></Shell>;
