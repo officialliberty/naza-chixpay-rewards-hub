@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import logoMark from "@/assets/chixpay-logo.png";
 
-export const Route = createFileRoute("/Liberty")({
+export const Route = createFileRoute("/naza")({
   head: () => ({ meta: [
     { title: "ChixPay Control — Admin" },
     { name: "description", content: "Private ChixPay control room for managing members, activity and account restrictions." },

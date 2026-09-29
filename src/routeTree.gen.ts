@@ -10,43 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LibertyRouteImport } from './routes/Liberty'
+import { Route as NazaRouteImport } from './routes/naza'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibertyRoute = LibertyRouteImport.update({
-  id: '/Liberty',
-  path: '/Liberty',
+const NazaRoute = NazaRouteImport.update({
+  id: '/naza',
+  path: '/naza',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/Liberty': typeof LibertyRoute
+  '/naza': typeof NazaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/Liberty': typeof LibertyRoute
+  '/naza': typeof NazaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/Liberty': typeof LibertyRoute
+  '/naza': typeof NazaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/Liberty'
+  fullPaths: '/' | '/naza'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/Liberty'
-  id: '__root__' | '/' | '/Liberty'
+  to: '/' | '/naza'
+  id: '__root__' | '/' | '/naza'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LibertyRoute: typeof LibertyRoute
+  NazaRoute: typeof NazaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,11 +58,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/Liberty': {
-      id: '/Liberty'
-      path: '/Liberty'
-      fullPath: '/Liberty'
-      preLoaderRoute: typeof LibertyRouteImport
+    '/naza': {
+      id: '/naza'
+      path: '/naza'
+      fullPath: '/naza'
+      preLoaderRoute: typeof NazaRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -70,7 +70,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LibertyRoute: LibertyRoute,
+  NazaRoute: NazaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
