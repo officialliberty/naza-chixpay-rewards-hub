@@ -12,4 +12,6 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // On Vercel builds, package the server for Vercel; Lovable builds ignore this.
+  ...(process.env.VERCEL ? { nitro: { preset: "vercel" } } : {}),
 });
