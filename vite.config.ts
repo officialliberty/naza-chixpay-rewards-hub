@@ -13,5 +13,5 @@ export default defineConfig({
     server: { entry: "server" },
   },
   // On Vercel builds, package the server for Vercel; Lovable builds ignore this.
-  ...(process.env.VERCEL ? { nitro: { preset: "vercel" } } : {}),
+  ...(process.env['VERCEL'] ? { nitro: { preset: "vercel" } } : {}),
 });
